@@ -1,6 +1,12 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import os
+try :
+    import matplotlib.pyplot as plt
+    
+except : 
+    pass
+    
+
 
 #import network as net
 # ========================================================================

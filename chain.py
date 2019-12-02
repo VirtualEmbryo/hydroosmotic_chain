@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
 # chain.py
 
+"""
+python3 chain.py config.conf [options]
+
+
+    Options
+    -------
+    -h : help
+    -v : print the steps
+
+
+    Contains
+    --------
+    
+
+"""
 import numpy as np
 
 # homemade libraries
@@ -16,7 +31,12 @@ import configparser
 
 import os, sys
 
-        
+try : 
+    import matplotlib.pyplot as plt
+    MATPLOTLIB_BOOL = True
+except : 
+    MATPLOTLIB_BOOL = False
+    pass        
 # ========================================================================
 # ============================ Move ======================================
 # ========================================================================
@@ -173,7 +193,7 @@ def run_simul(step, chain, t0, threshold=0.5, motion=False, flux_type='standard'
         
     return stop, events
 
-def load_config(filename, print_chain=False) :
+def load_config(filename) :
     global my_chain
     
     config = configparser.ConfigParser()
@@ -211,9 +231,6 @@ def load_config(filename, print_chain=False) :
     my_chain.xis = chis*my_chain.total_length
     my_chain.xiv = chiv*my_chain.total_length
     
-    if print_chain :
-        print(my_chain)
-    
     return config, my_chain
 
 # ========================================================================
@@ -250,7 +267,7 @@ def calc_new_timestep(error, tolerance, secure=0.9, cst_tstep=1) :
         return 1.
     else :
         if error < 1e-25 :
-            print('Error !', error)
+            #print('Error !', error)
             return 1.
         else :
             if error > tolerance :
@@ -489,7 +506,7 @@ def save_N(t, Nt, filename) :
     file_N.write(str(t)+'\t'+str(Nt)+'\n')
     file_N.close()
     
-def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45') :
+def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45', state_simul=False) :
     stop = False
     step = 0
     N0 = chain.nmax
@@ -548,7 +565,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 tools.plot_profile(x, chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
     
             if step % nb_frames == 0 :
-                print('Step : ', step, ' ; Time : ', chain.time, ' ; Nb Lumens : ', len(chain.lumens_dict)-2, end='\t\r')
+                if state_simul :
+                    #print('Step : ', step, ' ; Time : ', "{:4.6f}".format(chain.time), ' ; Nb Lumens : ', len(chain.lumens_dict)-2, end='\t\r')
+                    print('Step : ', step, ' ; Time : ', "{:4.6f}".format(chain.time), ' ; Nb Lumens : ', len(chain.lumens_dict)-2)
                 save_data = recording
                 if save_data :
                     tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
@@ -556,8 +575,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             if step == max_step :
                 print('\n\nEnd simulation : max step reached')
 
-        show_fig = False
-        if show_fig :
+        
+        if savefig :
             tools.plot_profile(x, chain, centers=False, lw=1.5, show=1, savefig=True, savename=os.path.join(dir_name, 'pic'+str(step).zfill(8)+'.png'))        
 
         save_data = recording
@@ -570,16 +589,16 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
         
 def main(configname, args) :
     # Initialize arguments
-    print_chain = False
+    state_simul = False
     
     # Import arguments from the console (if any...)
     if len(args) > 0 :
         for arg in args :
-            if arg.startswith('print_chain=') :
-                print_chain = eval(arg[len('print_chain='):])
+            if arg.startswith('-v') :
+                state_simul = True
     
     # Load Configuration file
-    config, my_chain = load_config(configname, print_chain=print_chain)
+    config, my_chain = load_config(configname)
     
     # Parameters of simulation
     max_step = int(config['integration']['max_step'])
@@ -588,17 +607,21 @@ def main(configname, args) :
     tolerance = float(config['integration']['tolerance'])
     nb_frames = int(config['sim']['nb_frames'])
     solver = config['integration']['solver']
-    savefig = eval(config['sim']['savefig'])
+    
+    if MATPLOTLIB_BOOL == True :
+        savefig = eval(config['sim']['savefig'])
+    else :
+        savefig = False
     
     # Run Simulation
-    run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig)
+    run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul)
     
     return ;
     
 if __name__ == '__main__' :
     if len(sys.argv) < 2:
         print('[network_simulation.py] Error: missing config file, type help for instructions.')
-    elif sys.argv[1]=='help':
+    elif sys.argv[1]=='help' or sys.argv[1]=='-h':
         print(__doc__)
     # first argument should be a readable config file:
     elif os.access(sys.argv[1], os.R_OK):
