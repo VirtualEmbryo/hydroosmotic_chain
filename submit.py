@@ -35,7 +35,7 @@ import subprocess
 subcmd = 'sbatch'
 queue = 'debug'
 
-folder_path = '/share/mathieu.leverge/git/cavitation/network/'
+folder_path = '/share/mathieu.leverge/git/chain_lumen/'
 
 def write_gen(directories, queue=queue) :
     nconfig=len(directories)
@@ -69,7 +69,7 @@ def write_s(config, n) :
     f = open(filename, 'w')
     f.write('#!/bin/bash\n')
     f.write('cd ' + config + '\n')
-    f.write('/share/mathieu.leverge/git/cavitation/network/simulation.py test.ini')
+    f.write('/share/mathieu.leverge/git/chain_lumen/chain.py config.conf')
     
     os.chmod(filename, 0700)
     return 0
