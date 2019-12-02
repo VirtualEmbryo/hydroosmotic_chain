@@ -1,0 +1,8 @@
+.gitignore
+
+*.pyc
+__pycache__/*
+*.ipynb
+
+*.dat
+.DS_Store
