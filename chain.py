@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # chain.py
 
 """
@@ -16,6 +16,7 @@ python3 chain.py config.conf [options]
     
 
 """
+
 import numpy as np
 
 # homemade libraries
@@ -25,8 +26,8 @@ import network as net
 import topology as tplg
 import lumenclass as lc
 
-from scipy.integrate import solve_ivp
-from scipy.integrate import odeint
+#from scipy.integrate import solve_ivp
+#from scipy.integrate import odeint
 import configparser
 
 import os, sys
@@ -512,33 +513,19 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     N0 = chain.nmax
     h = alpha / N0
     
-    pics_dirname = os.path.join(dir_name,'pics')
+    pics_dirname = 'pics/'
+    
     x = np.linspace(0, my_chain.total_length, 1001)
 
     #os.rmdir(dirname)
-    try :
-        os.mkdir(dir_name)
-    except :
-        print('Directory already exists... Data and directory will be removed.')
-        tools.clear_folder(dir_name)
-        os.mkdir(dir_name)
-        pass
-        
-    if savefig :
-        try :
-            os.mkdir(pics_dirname)
-        except :
-            print('Remove previous pictures from ' + pics_dirname)
-            for elem in os.listdir(pics_dirname) :
-                os.remove(os.path.join(pics_dirname, elem))
 
     file_N = open(os.path.join(dir_name, 'sim_nlum.dat'), 'w')
     file_N.write('#t\tN(t)\n')
     file_N.write(str(0.)+'\t'+str(N0)+'\n')
     file_N.close()
     
-    if 1 :
-    #try :
+    #if 1 :
+    try :
         for i in range(max_step) :
             step += 1
                         
@@ -577,14 +564,14 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
 
         
         if savefig :
-            tools.plot_profile(x, chain, centers=False, lw=1.5, show=1, savefig=True, savename=os.path.join(dir_name, 'pic'+str(step).zfill(8)+'.png'))        
+            tools.plot_profile(x, chain, centers=False, lw=1.5, show=0, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))        
 
         save_data = recording
         if save_data :
             tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
-    #except :
-    #    tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
-    #    print('\n\nSimulation stopped before the end...')
+    except :
+        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
+        print('\n\nSimulation stopped before the end...')
     return ;
         
 def main(configname, args) :
@@ -608,13 +595,36 @@ def main(configname, args) :
     nb_frames = int(config['sim']['nb_frames'])
     solver = config['integration']['solver']
     
+    dir_name = config['sim']['outdir']
+    
     if MATPLOTLIB_BOOL == True :
         savefig = eval(config['sim']['savefig'])
     else :
         savefig = False
     
+    # Create directory
+    #try :
+    #    os.mkdir(dir_name)
+    #except :
+    #    print('Directory already exists... Data and directory will be removed.')
+    #    tools.clear_folder(dir_name)
+    #    os.mkdir(dir_name)
+    #    pass
+        
+    if savefig :
+        pics_dirname = os.path.join(dir_name,'pics')
+        try :
+            os.mkdir(pics_dirname)
+        except :
+            print('Remove previous pictures from ' + pics_dirname)
+            for elem in os.listdir(pics_dirname) :
+                os.remove(os.path.join(pics_dirname, elem))
+    
     # Run Simulation
-    run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul)
+    run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name)
+    
+    # Move the config file into the directory
+    os.rename(configname, os.path.join(dir_name, configname))
     
     return ;
     

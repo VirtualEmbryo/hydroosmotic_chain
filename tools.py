@@ -160,7 +160,6 @@ def clear_folder(dir_name) :
             print('Error : directory ' + dir_name + ' not cleaned...')
             return 2
             
-            
 def save_recording(chain, filename='sim.dat', filename_events='events.log', folder='') :
     try :
         os.mkdir(folder)
