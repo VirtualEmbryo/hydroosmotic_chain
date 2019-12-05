@@ -217,21 +217,54 @@ def load_config(filename) :
             np.random.seed(int(config['sim']['seed']))
             
         my_chain = lc.Osmotic_Chain(nb_lumens = int(config['sim']['M']), taus=float(config['hydroosmotic']['taus']), tauv=float(config['hydroosmotic']['tauv']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
-        if not eval(config['sim']['pumping']) :
-            #print('No pumping')
-            ca_list = [0. for i in range(my_chain.nb_lumens+2)]
+        
+        if config.has_option('pumping', 'pattern') :
+            #print('No pumping')    
+            my_chain.pumping = config['pumping']['pattern']
+            if config['pumping']['pattern'] == 'normal' :
+                
+                br_avg, br_std = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
+                lum_avg, lum_std = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
+                
+                ca_bridge_list = [np.random.normal(br_avg, br_std) for b in range(my_chain.nb_lumens+1)]
+                ca_lumen_list = [np.random.normal(lum_avg, lum_std) for m in range(my_chain.nb_lumens+2)]
+            
+            elif config['pumping']['pattern'] == 'uniform' :
+                br_low, br_high = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
+                lum_low, lum_high = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
+                
+                ca_bridge_list = [np.random.uniform(br_low, br_high) for b in range(my_chain.nb_lumens+1)]
+                ca_lumen_list = [np.random.uniform(lum_low, lum_high) for m in range(my_chain.nb_lumens+2)]
+                
+            elif config['pumping']['pattern'] == 'gradient' :
+                br_1, br_2 = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
+                lum_1, lum_2 = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
+                
+                ca_bridge_list = [b*(br_2 - br_1)/(my_chain.nb_lumens+1) + br_1 for b in range(my_chain.nb_lumens+1)]
+                ca_lumen_list = [m*(lum_2 - lum_1)/(my_chain.nb_lumens+2) + lum_1 for m in range(my_chain.nb_lumens+2)]
+            
+            else :
+                my_chain.pumping = 'None'
+                ca_lumen_list = [0. for i in range(my_chain.nb_lumens+2)]
+                ca_bridge_list = [0. for i in range(my_chain.nb_lumens+1)]
+                
+        else :
+            my_chain.pumping = 'None'
+            ca_lumen_list = [0. for i in range(my_chain.nb_lumens+2)]
+            ca_bridge_list = [0. for i in range(my_chain.nb_lumens+1)]
         
         equilibrium = eval(config['hydroosmotic']['equilibrium'])
         nions_avg = float(config['hydroosmotic']['nions_avg'])
         nions_std = float(config['hydroosmotic']['nions_std'])
         
-        my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), eps = float(config['topology']['eps']), ca_list=ca_list, equilibrium=equilibrium, nions_avg=nions_avg, nions_std=nions_std)
+        my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), eps = float(config['topology']['eps']), equilibrium=equilibrium, nions_avg=nions_avg, nions_std=nions_std, ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
     
     chis = float(config['hydroosmotic']['chis'])
     chiv = float(config['hydroosmotic']['chiv'])
-    my_chain.xis = chis*my_chain.total_length
-    my_chain.xiv = chiv*my_chain.total_length
+    my_chain.xis = chis*my_chain.bridges_dict[1].length
+    my_chain.xiv = chiv*my_chain.bridges_dict[1].length
     
+    #print(my_chain)
     return config, my_chain
 
 # ========================================================================
@@ -541,6 +574,13 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 if stop_cause == 'end_simul':
                     if len(chain.lumens_dict) - 2 == 1 :
                         print('End simulation : 1 Lumen left')
+                        
+                        winner = None
+                        for k in chain.lumens_dict.keys() : 
+                            if k != 0 and k != -1 :
+                                winner = k
+                        
+                        chain.events += 'Time : ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(winner))
                     elif len(chain.lumens_dict) - 2 == 0 :
                         print('End simulation : 0 Lumen left')
                     break ;
@@ -562,6 +602,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                     
             if step == max_step :
                 print('\n\nEnd simulation : max step reached')
+                tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
 
         
         if savefig :

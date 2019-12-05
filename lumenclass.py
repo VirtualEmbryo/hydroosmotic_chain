@@ -28,6 +28,7 @@ class Chain :
         
         # Recording
         self.rec = {} 
+        self.rec_br = {}
         
     def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3) :
         lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
@@ -86,10 +87,13 @@ class Chain :
                 
     def __record_state__(self) :
         self.rec[self.time] = {}
+        self.rec_br[self.time] = {}
+        
         for k in self.lumens_dict.keys() :
-            self.rec[self.time][k] = self.lumens_dict[k].length
+            self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].nb_ions, self.lumens_dict[k].pos]
+        for b in self.bridges_dict.keys() :
+            self.rec_br[self.time][b] = [self.bridges_dict[b].length]
     
-
 class Lumen :
     def __init__(self, index, init_pos, init_length, theta) :
         self.index = index
@@ -163,36 +167,38 @@ class Osmotic_Chain(Chain):
         self.taus = taus
         self.tauv = tauv
         
-    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, ca_list=[], equilibrium=True, nions_avg=2, nions_std=1.) :
+    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, ca_lumen_list=[], ca_bridge_list=[], equilibrium=True, nions_avg=2, nions_std=1.) :
+        
         lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
-        
         for b in range(len(bridges)) :
-            if len(ca_list) > 0 :
-                self.bridges_dict[int(bridges[b, 0])] = Osmotic_Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=ca_list[b])
-            else :
-                self.bridges_dict[int(bridges[b, 0])] = Osmotic_Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=0.)
+            self.bridges_dict[int(bridges[b, 0])] = Osmotic_Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=ca_bridge_list[b])
                 
         for m in range(self.nb_lumens+2) :
             nu, mu = net.calc_nuj_list(self.theta), net.calc_muj_list(self.theta)
             if equilibrium :
-                #print('Equilibrium')
                 nion = net.osmotic_equilibrium(L=lumens[m, 1], nu=nu, mu=mu)
             else : 
                 nion = -1
                 while nion <= 0 :
                     nion = np.random.normal(nions_avg, nions_std)
-            self.lumens_dict[int(lumens[m, 0])] = Osmotic_Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], init_nb_ions=nion, theta=self.theta, eps=eps, ca = ca_list[m])
+            self.lumens_dict[int(lumens[m, 0])] = Osmotic_Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], init_nb_ions=nion, theta=self.theta, eps=eps, ca = ca_lumen_list[m])
                     
         self.nmax = max(self.lumens_dict.keys())
         
         self.__record_state__()
         
     def __record_state__(self) :
+        
         self.rec[self.time] = {}
+        self.rec_br[self.time] = {}
+        
         for k in self.lumens_dict.keys() :
             self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].nb_ions, self.lumens_dict[k].pos]
-    
+        for b in self.bridges_dict.keys() :
+            self.rec_br[self.time][b] = [self.bridges_dict[b].length]
+        
+        
     def __make_flux_vec__(self) :
         vec = []
         pos_vec = []
@@ -250,6 +256,7 @@ class Osmotic_Chain(Chain):
         cp_chain.total_length = self.total_length
         cp_chain.time = self.time
         cp_chain.rec = self.rec
+        cp_chain.rec_br = self.rec_br
         cp_chain.nmax = self.nmax
         cp_chain.events = self.events
         
@@ -283,6 +290,7 @@ class Osmotic_Chain(Chain):
         print('Permeation times :')
         print('       tau_s = '+str(self.taus))
         print('       tau_v = '+str(self.tauv))
+        print('Pumping : ' + str(self.pumping))
         print('======= LUMENS =======')
         print('Nb lumens : '+str(self.nb_lumens))
         for k in list(self.lumens_dict.keys()) :

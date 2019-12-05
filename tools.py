@@ -160,7 +160,7 @@ def clear_folder(dir_name) :
             print('Error : directory ' + dir_name + ' not cleaned...')
             return 2
             
-def save_recording(chain, filename='sim.dat', filename_events='events.log', folder='') :
+def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='') :
     try :
         os.mkdir(folder)
     except : pass
@@ -172,7 +172,10 @@ def save_recording(chain, filename='sim.dat', filename_events='events.log', fold
     
     # Save qties
     file_all = open(os.path.join(folder, filename), 'a+')
+    file_br = open(os.path.join(folder, filename_bridges), 'a+')
+    
     time_list = np.sort(list(chain.rec.keys()))
+    
     for t in time_list :
         s = ''
         for n in chain.rec[t].keys() :
@@ -184,10 +187,18 @@ def save_recording(chain, filename='sim.dat', filename_events='events.log', fold
                     print(chain)
         
         file_all.write(s)
-
-    file_all.close()         
+        
+        sb = ''
+        for b in chain.rec_br[t].keys() :
+            sb += str(b) + '\t' + str(t) + '\t' + str(chain.rec_br[t][b][0]) + '\n'
+            
+        file_br.write(sb)    
+        
+    file_all.close()
+    file_br.close()
         
     chain.rec = {}
+    chain.rec_br = {}
     chain.events = ''
     
 # ========================================================================
@@ -236,8 +247,42 @@ def load_file(filename) :
         L_array[step] = np.array(L_temp)
         N_array[step] = np.array(N_temp)
         p_array[step] = np.array(p_temp)
+    
     return L_array, N_array, p_array
+    
+def load_brfile(filename) :
+    time = []
+    dat = np.loadtxt(filename)
+    
+    Nmax = int(np.max(dat[:, 0]))
 
+    ell_a = {}
+    
+    for i in range(len(dat)) :
+        t = dat[i, 1]
+        if t not in ell_a.keys() :
+            ell_a[t] = {}
+    
+        ell_a[t][int(dat[i, 0])] = dat[i, 2]
+
+    ell_array = np.zeros(( len(ell_a.keys()), Nmax+1 ))
+    
+    step = -1
+    for k in ell_a.keys() :
+        step += 1
+        ell_temp = [k]
+        
+        for j in range(1, Nmax+1) :
+            if j in ell_a[k].keys() :
+                ell_temp += [ell_a[k][j]]
+                
+            else :
+                ell_temp += [None]
+                
+        ell_array[step] = np.array(ell_temp)
+
+    return ell_array
+    
 def calc_A_tot(L) :
     mu = 0.6105653703843762
     A_tot = []
@@ -251,5 +296,81 @@ def calc_A_tot(L) :
         A_tot += [a]
     return time, A_tot
     
+# ========================================================================
+# ============================= Plots ====================================
+# ========================================================================
+
+def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 7), x_logscale=False, y_logscale=False) :
+    fig, ax = plt.subplots(2, 2, figsize=figsize)
+
+    tmin, tmax = 0., 0.4
+
+    if x_logscale :
+        ax[0,0].set_xscale('log')
+        ax[1,0].set_xscale('log')
+        ax[0,1].set_xscale('log')
+        ax[1,1].set_xscale('log')
+
+    if y_logscale :
+        ax[0,0].set_yscale('log')
+        ax[1,0].set_yscale('log')
+        ax[0,1].set_yscale('log')
+        ax[1,1].set_yscale('log')
+
+    # LENGTHS
+    ax[0, 0].set_title(r'$\ell_{ij}$', fontsize=15)
+    for k in range(1, len(L[0])) :
+        ax[0, 0].plot(L[:, 0], L[:, k], linewidth=2)
+    
+    ax[0, 0].grid()
+    #ax[0, 0].set_xlabel('Time [s]')
+    #ax[0, 0].set_xlim(tmin, tmax)
+
+    #ax[0, 0].set_ylim(Lmin, Lmax)
+
+    # Nions
+    ax[0, 1].set_title(r'$N_{ions}$', fontsize=15)
+    for k in range(1, len(nions[0])) :
+        ax[0, 1].plot(nions[:, 0], nions[:, k], linewidth=2)
+    
+    ax[0, 1].grid()
+    #ax[0, 1].set_xlabel('Time [s]')
+    #ax[0, 1].set_xlim(tmin, tmax)
+
+    mu = 0.6105653703843762
+    # AREAS
+    ax[1, 0].set_title('Area', fontsize=15)
+    for k in range(1, len(L[0])) :
+        ax[1, 0].plot(L[:, 0], L[:, k]**2 / mu)
+    
+    if show_totalarea :
+        t_a, A_tot = calc_A_tot(L)
+        ax[1, 0].plot(t_a, A_tot, linestyle='--', linewidth=2)
+
+    ax[1, 0].grid()
+    ax[1, 0].set_xlabel('Time [s]')
+    #ax[1, 0].set_xlim(tmin, tmax)
+
+
+    # Concentration
+    ax[1, 1].set_title('Concentrations', fontsize=15)
+    for k in range(1, len(nions[0])) :
+        ax[1, 1].plot(nions[:, 0], nions[:, k]*mu / L[:, k]**2, linewidth=2)
+    
+
+    ax[1, 1].grid()
+    ax[1, 1].set_xlabel('Time [s]')
+    #ax[1, 1].set_xlim(tmin, tmax)
+    if savefig :
+        plt.savefig(savename, format='eps')
+    plt.show()
+
+def chemograph(L, pos, x) :
+    opening = np.ones((len(L), len(x)))
+    for t in range(len(L)) :
+        for i in range(len(x)) :
+            for k in range(1, len(pos[t, 1:])+1) :
+                if np.abs(x[i]-pos[t, k]) < L[t, k] :
+                    opening[t, i] = 0
+    return opening
 #
-        
