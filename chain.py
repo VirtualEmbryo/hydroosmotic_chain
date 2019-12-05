@@ -264,10 +264,11 @@ def temporary_chain(Lj, Nj, chain, index) :
     return lumen_j, lumen_i, lumen_k, new_br_ij, new_br_jk
 
 def calc_new_timestep(error, tolerance, secure=0.9, cst_tstep=1) :
+
     if cst_tstep :
         return 1.
     else :
-        if error < 1e-25 :
+        if error == 0. :
             #print('Error !', error)
             return 1.
         else :

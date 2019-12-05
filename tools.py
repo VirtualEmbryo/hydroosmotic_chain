@@ -172,8 +172,8 @@ def save_recording(chain, filename='sim.dat', filename_events='events.log', fold
     
     # Save qties
     file_all = open(os.path.join(folder, filename), 'a+')
-    
-    for t in chain.rec.keys() :
+    time_list = np.sort(list(chain.rec.keys()))
+    for t in time_list :
         s = ''
         for n in chain.rec[t].keys() :
             if n != 0 and n != -1 :

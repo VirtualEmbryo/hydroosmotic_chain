@@ -7,3 +7,5 @@ __pycache__/*
 *.dat
 .DS_Store
 out/*
+*.conf
+*.conf.tpl
