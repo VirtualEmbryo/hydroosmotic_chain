@@ -14,7 +14,8 @@ python3
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
+try : import matplotlib.pyplot as plt
+except : pass
 
 import os, sys
 
