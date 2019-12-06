@@ -197,8 +197,7 @@ class Osmotic_Chain(Chain):
             self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].nb_ions, self.lumens_dict[k].pos]
         for b in self.bridges_dict.keys() :
             self.rec_br[self.time][b] = [self.bridges_dict[b].length]
-        
-        
+             
     def __make_flux_vec__(self) :
         vec = []
         pos_vec = []

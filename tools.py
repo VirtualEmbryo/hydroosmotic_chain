@@ -373,4 +373,13 @@ def chemograph(L, pos, x) :
                 if np.abs(x[i]-pos[t, k]) < L[t, k] :
                     opening[t, i] = 0
     return opening
-#
+
+# ========================================================================
+# ============================= Plots ====================================
+# ========================================================================
+
+def get_winner(filename) :
+    f = open(filename, 'r')
+    w = int(f.readlines()[-1].split(' ')[-1])
+    f.close()
+    return w

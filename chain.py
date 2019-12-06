@@ -542,6 +542,7 @@ def save_N(t, Nt, filename) :
     file_N.close()
     
 def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45', state_simul=False) :
+    
     stop = False
     step = 0
     N0 = chain.nmax
@@ -572,16 +573,18 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             
             if stop==1 :
                 if stop_cause == 'end_simul':
+                    # One lumen left : returns 2 ; otherwise return 1
                     if len(chain.lumens_dict) - 2 == 1 :
+                        end = 2
                         print('End simulation : 1 Lumen left')
                         
-                        winner = None
                         for k in chain.lumens_dict.keys() : 
                             if k != 0 and k != -1 :
-                                winner = k
+                                my_chain.winner = k
                         
-                        chain.events += 'Time : ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(winner))
+                        #chain.events += 'Time : ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(winner))
                     elif len(chain.lumens_dict) - 2 == 0 :
+                        end = 1
                         print('End simulation : 0 Lumen left')
                     break ;
             
@@ -614,7 +617,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     except :
         tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
         print('\n\nSimulation stopped before the end...')
-    return ;
+        end = 0
+    
+    return end ;
         
 def main(configname, args) :
     # Initialize arguments
@@ -652,7 +657,9 @@ def main(configname, args) :
     #    tools.clear_folder(dir_name)
     #    os.mkdir(dir_name)
     #    pass
-        
+    
+    my_chain.__save__(os.path.join(dir_name, 'init_chain.dat'))
+    
     if savefig :
         pics_dirname = os.path.join(dir_name,'pics')
         try :
@@ -663,7 +670,13 @@ def main(configname, args) :
                 os.remove(os.path.join(pics_dirname, elem))
     
     # Run Simulation
-    run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name)
+    end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name)
+    
+    if end == 2 :
+        f = open(os.path.join(dir_name, 'init_chain.dat'), 'a+')
+        f.write('========= END =========\n')
+        f.write('Winner : ' + str(int(my_chain.winner)))
+        f.close()
     
     # Move the config file into the directory
     os.rename(configname, os.path.join(dir_name, configname))
