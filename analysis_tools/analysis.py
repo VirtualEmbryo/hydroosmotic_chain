@@ -92,7 +92,9 @@ def main(args) :
             filename = arg[len('filename='):]
         elif arg.startswith('outfile=') :
             outfile = arg[len('outfile='):]
-            
+    
+    print(main_dir, tpl, filename, outfile)
+    
     list_dir = get_listdir(main_dir, tpl)
     outputs = get_outputs(filename, list_dir, main_dir)
     
