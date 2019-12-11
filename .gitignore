@@ -13,3 +13,9 @@ _data
 _data/*
 _notebook
 _notebook/*
+_configfiles/*
+_configfiles
+
+*.eps
+*.png
+*.jpg

@@ -2,7 +2,7 @@
 # submit.py
 
 """
-submit.py script.py [options] config????
+submit.py script.py config???? [options]
 
     Python script for simulation submission to a cluster. It creates submission bash files for Slurm.
 
@@ -17,10 +17,14 @@ submit.py script.py [options] config????
     -------
     queue : optional, chosen partition, default : debug
         submit will run the script.py in the specified partition.
+    runtime : optional, default : 1-0:00
+        maximum running time of the simulation. Syntax is day-hours:minutes:seconds
 
 
     Examples
     --------
+    1.
+        submit.py chain.py queue=bigmem runtime=2-0:00 config????
 
     Functions
 
@@ -34,10 +38,11 @@ import os, sys
 import subprocess
 subcmd = 'sbatch'
 queue = 'debug'
+runtime = '1-0:00'
 
 folder_path = '/share/mathieu.leverge/git/chain_lumen/'
 
-def write_gen(directories, queue=queue) :
+def write_gen(directories, queue=queue, runtime=runtime) :
     nconfig=len(directories)
     filename='sim.sh'
     f = open(filename, 'w')
@@ -47,7 +52,7 @@ def write_gen(directories, queue=queue) :
     f.write('#SBATCH --nodes=1\n')
     f.write('#SBATCH --cpus-per-task=1\n')
     f.write('#SBATCH --partition=' + queue + '\n')
-    f.write('#SBATCH --time=1-0:00\n')
+    f.write('#SBATCH --time='+runtime+'\n')
     f.write('#SBATCH --mem=512\n')
     f.write('#SBATCH --signal=INT@60\n')
     f.write('#SBATCH --signal=TERM@120\n')
@@ -75,12 +80,16 @@ def write_s(config, n) :
     return 0
 
 def main(args):
-    global subcmd, queue
+    global subcmd, queue, runtime
     list_dir = []
 
     for arg in args :
         if arg.startswith('queue=') :
             queue = arg[len('queue='):]
+            
+        elif arg.startswith('runtime=') :
+            print('runtime')
+            runtime = arg[len('runtime='):]
         else :
             list_dir += [arg]
 
@@ -92,7 +101,7 @@ def main(args):
     except : pass
     
     nconfig = len(list_dir)
-    f = write_gen(list_dir, queue=queue)
+    f = write_gen(list_dir, queue=queue, runtime=runtime)
     n = 1
     
     for d in list_dir :

@@ -228,7 +228,6 @@ def func_JRs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     
     dC_L = func_C_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L)
     dC_R = func_C_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R)
-    
     return chis*ellt/L0 * ((dC_L-ca_LR)*np.cosh(1./chis) - (dC_R-ca_LR)) / np.sinh(1./chis)
 
 ### HYDRAULIC FLUXES
@@ -291,7 +290,6 @@ def func_JRv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     
     la = lam(-0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     mb = mu(0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
-    
     return chiv*ellt/L0 * ((P_L-la)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_R-mb)/np.sinh(1./chiv) - la)
 
 ### FUNCTIONS

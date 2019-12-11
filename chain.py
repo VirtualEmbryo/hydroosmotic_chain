@@ -35,6 +35,7 @@ import os, sys
 try : 
     import matplotlib.pyplot as plt
     MATPLOTLIB_BOOL = True
+    #print('pyplot imported')
 except : 
     MATPLOTLIB_BOOL = False
     pass        
@@ -212,6 +213,7 @@ def load_config(filename) :
         
         my_chain.__import_config__(lumens_array, bridges_array, eps = float(config['topology']['eps']))
         
+        my_chain.pumping = config['pumping']['pattern']
     else :
         if config.has_option('sim', 'seed') and len(config['sim']['seed']) > 0 :
             np.random.seed(int(config['sim']['seed']))
@@ -261,8 +263,11 @@ def load_config(filename) :
     
     chis = float(config['hydroosmotic']['chis'])
     chiv = float(config['hydroosmotic']['chiv'])
+    
     my_chain.xis = chis*my_chain.bridges_dict[1].length
     my_chain.xiv = chiv*my_chain.bridges_dict[1].length
+    #my_chain.xis = chis*my_chain.total_length
+    #my_chain.xiv = chiv*my_chain.total_length
     
     #print(my_chain)
     return config, my_chain
@@ -541,14 +546,12 @@ def save_N(t, Nt, filename) :
     file_N.write(str(t)+'\t'+str(Nt)+'\n')
     file_N.close()
     
-def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45', state_simul=False) :
+def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45', state_simul=False, pics_dirname='pics') :
     
     stop = False
     step = 0
     N0 = chain.nmax
     h = alpha / N0
-    
-    pics_dirname = 'pics/'
     
     x = np.linspace(0, my_chain.total_length, 1001)
 
@@ -559,8 +562,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     file_N.write(str(0.)+'\t'+str(N0)+'\n')
     file_N.close()
     
-    #if 1 :
-    try :
+    if 1 :
+    #try :
         for i in range(max_step) :
             step += 1
                         
@@ -592,6 +595,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                     tplg.topology(chain)
                     stop = 0
 
+                
             if savefig == True and step % nb_frames == 0 :
                 tools.plot_profile(x, chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
     
@@ -608,13 +612,18 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
 
         
+        if i == max_step-1 :
+            end = 10
+            
         if savefig :
+            
             tools.plot_profile(x, chain, centers=False, lw=1.5, show=0, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))        
 
         save_data = recording
         if save_data :
             tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
-    except :
+    else :
+    #except :
         tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
         print('\n\nSimulation stopped before the end...')
         end = 0
@@ -648,38 +657,35 @@ def main(configname, args) :
         savefig = eval(config['sim']['savefig'])
     else :
         savefig = False
-    
-    # Create directory
-    #try :
-    #    os.mkdir(dir_name)
-    #except :
-    #    print('Directory already exists... Data and directory will be removed.')
-    #    tools.clear_folder(dir_name)
-    #    os.mkdir(dir_name)
-    #    pass
-    
+        
     my_chain.__save__(os.path.join(dir_name, 'init_chain.dat'))
     
+    pics_dirname=''
     if savefig :
         pics_dirname = os.path.join(dir_name,'pics')
+        #print(pics_dirname)
         try :
+        #if 1:
             os.mkdir(pics_dirname)
+            print(pics_dirname)
         except :
             print('Remove previous pictures from ' + pics_dirname)
             for elem in os.listdir(pics_dirname) :
-                os.remove(os.path.join(pics_dirname, elem))
+               os.remove(os.path.join(pics_dirname, elem))
     
     # Run Simulation
-    end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name)
+    end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname)
     
     if end == 2 :
         f = open(os.path.join(dir_name, 'init_chain.dat'), 'a+')
         f.write('========= END =========\n')
         f.write('Winner : ' + str(int(my_chain.winner)))
         f.close()
+        
+    
     
     # Move the config file into the directory
-    os.rename(configname, os.path.join(dir_name, configname))
+    #os.rename(configname, os.path.join(dir_name, configname))
     
     return ;
     

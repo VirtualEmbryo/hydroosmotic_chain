@@ -115,7 +115,7 @@ def profile(x, chain, theta=np.pi/3., h0=0.1) :
 def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', lw = 2, contour_color='k', center_color='r') :
     
     h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
-    
+    plt.suptitle('t = ' + "{:5.5f}".format(chain.time))
     plt.plot(x, h_d, linewidth = lw, color = contour_color)
     plt.plot(x, h_u, linewidth = lw, color = contour_color)
     
@@ -265,14 +265,14 @@ def load_brfile(filename) :
     
         ell_a[t][int(dat[i, 0])] = dat[i, 2]
 
-    ell_array = np.zeros(( len(ell_a.keys()), Nmax+1 ))
+    ell_array = np.zeros(( len(ell_a.keys()), Nmax+2 ))
     
     step = -1
     for k in ell_a.keys() :
         step += 1
         ell_temp = [k]
         
-        for j in range(1, Nmax+1) :
+        for j in range(0, Nmax+1) :
             if j in ell_a[k].keys() :
                 ell_temp += [ell_a[k][j]]
                 
@@ -300,7 +300,7 @@ def calc_A_tot(L) :
 # ============================= Plots ====================================
 # ========================================================================
 
-def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 7), x_logscale=False, y_logscale=False) :
+def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 7), x_logscale=False, y_logscale=False, show_meanlength = True) :
     fig, ax = plt.subplots(2, 2, figsize=figsize)
 
     tmin, tmax = 0., 0.4
@@ -319,9 +319,11 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
 
     # LENGTHS
     ax[0, 0].set_title(r'$\ell_{ij}$', fontsize=15)
-    for k in range(1, len(L[0])) :
-        ax[0, 0].plot(L[:, 0], L[:, k], linewidth=2)
-    
+    for k in range(1, len(ell[0])) :
+        ax[0, 0].plot(ell[:, 0], ell[:, k], linestyle='--', linewidth=2, label = str(k))
+    mean = np.nanmean(ell[:, 1:], axis=1)
+    ax[0, 0].plot(ell[1:-1, 0], mean[1:-1], color = 'k')
+    #ax[0, 0].legend()
     ax[0, 0].grid()
     #ax[0, 0].set_xlabel('Time [s]')
     #ax[0, 0].set_xlim(tmin, tmax)
@@ -345,7 +347,7 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
     
     if show_totalarea :
         t_a, A_tot = calc_A_tot(L)
-        ax[1, 0].plot(t_a, A_tot, linestyle='--', linewidth=2)
+        ax[1, 0].plot(t_a, A_tot, linestyle='--', linewidth=2, color='k')
 
     ax[1, 0].grid()
     ax[1, 0].set_xlabel('Time [s]')
@@ -383,3 +385,6 @@ def get_winner(filename) :
     w = int(f.readlines()[-1].split(' ')[-1])
     f.close()
     return w
+    
+    
+#
