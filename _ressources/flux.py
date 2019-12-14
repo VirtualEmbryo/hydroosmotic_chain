@@ -1,6 +1,7 @@
 import numpy as np
-import network as net
-import topology
+
+import _ressources.network as net
+import _ressources.topology
 
 def calc_fluxes(chain, threshold=0.5, flux_val=1e-2, viscosity=1e-3, e0=1e-2, kappa=1) :
     fl = np.zeros(chain.nb_lumens)

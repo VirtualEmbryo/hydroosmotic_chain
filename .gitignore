@@ -19,3 +19,4 @@ _configfiles
 *.eps
 *.png
 *.jpg
+__init__.py

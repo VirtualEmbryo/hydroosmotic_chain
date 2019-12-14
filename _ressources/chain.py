@@ -16,21 +16,23 @@ python3 chain.py config.conf [options]
     
 
 """
+import os, sys
+
+module_path = os.path.abspath(os.path.join('..'))
+
+if module_path not in sys.path :
+    sys.path.append(module_path)
 
 import numpy as np
-
-# homemade libraries
-import flux
-import tools
-import network as net
-import topology as tplg
-import lumenclass as lc
-
-#from scipy.integrate import solve_ivp
-#from scipy.integrate import odeint
 import configparser
 
-import os, sys
+# homemade libraries
+
+import _ressources.flux as flux
+import _ressources.tools as tools
+import _ressources.network as net
+import _ressources.topology as tplg
+import _ressources.lumenclass as lc
 
 try : 
     import matplotlib.pyplot as plt

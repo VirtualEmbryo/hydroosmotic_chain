@@ -1,6 +1,7 @@
 import numpy as np
-import network as net
-import lumenclass as lc
+
+import _ressources.network as net
+import _ressources.lumenclass as lc
 
 def topology(chain) :
     # Delete lumens

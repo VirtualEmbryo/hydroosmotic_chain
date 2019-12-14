@@ -1,5 +1,6 @@
 import numpy as np
-import network as net
+
+import _ressources.network as net
 
 # ============================================================
 # =================  Hydraulic Chain  ========================
