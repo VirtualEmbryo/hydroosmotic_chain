@@ -37,20 +37,21 @@ Creation : 28/09/18
 import os, sys
 import subprocess
 subcmd = 'sbatch'
-queue = 'debug'
+queue = 'bigmem'
 runtime = '1-0:00'
+cpu_per_task = 1
 
 folder_path = '/share/mathieu.leverge/git/chain_lumen/_ressources/'
 
-def write_gen(directories, queue=queue, runtime=runtime) :
+def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task) :
     nconfig=len(directories)
     filename='sim.sh'
     f = open(filename, 'w')
     f.write('#!/bin/bash\n')
-    f.write('#SBATCH --job-name=net\n')
+    f.write('#SBATCH --job-name=chain\n')
     f.write('#SBATCH --ntasks=1\n')
     f.write('#SBATCH --nodes=1\n')
-    f.write('#SBATCH --cpus-per-task=1\n')
+    f.write('#SBATCH --cpus-per-task=1'+ str(cpu_per_task) +'\n')
     f.write('#SBATCH --partition=' + queue + '\n')
     f.write('#SBATCH --time='+runtime+'\n')
     f.write('#SBATCH --mem=512\n')
@@ -88,8 +89,15 @@ def main(args):
             queue = arg[len('queue='):]
             
         elif arg.startswith('runtime=') :
-            print('runtime')
             runtime = arg[len('runtime='):]
+            
+        elif arg.startswth('cpu-per-task=') :
+            cpu_per_task = int(arg[len('cpu-per-task='):])
+            if cpu_per_task < 1 :
+                print('Error : too few cpus (0) per task assigned. Variable set to one.')
+                cpu_per_task = 1
+            elif cpu_per_task > 1 :
+                print(str(cpu_per_task) + 'assigned for one task.')
         else :
             list_dir += [arg]
 
@@ -101,7 +109,7 @@ def main(args):
     except : pass
     
     nconfig = len(list_dir)
-    f = write_gen(list_dir, queue=queue, runtime=runtime)
+    f = write_gen(list_dir, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task)
     n = 1
     
     for d in list_dir :

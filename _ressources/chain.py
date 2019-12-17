@@ -28,7 +28,7 @@ import numpy as np
 try :
     import configparser
 except :
-    import ConfigParser
+    import ConfigParser as configparser
 
 # homemade libraries
 try :
@@ -558,6 +558,11 @@ def save_N(t, Nt, filename) :
     file_N.write(str(t)+'\t'+str(Nt)+'\n')
     file_N.close()
     
+def save_ell(t, ellt, filename) :
+    file_ell = open(filename, 'a')
+    file_ell.write(str(t)+'\t'+str(ellt)+'\n')
+    file_ell.close()
+    
 def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45', state_simul=False, pics_dirname='pics') :
     
     stop = False
@@ -574,6 +579,12 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     file_N.write(str(0.)+'\t'+str(N0)+'\n')
     file_N.close()
     
+    file_ell = open(os.path.join(dir_name, 'sim_ell_avg.dat'), 'w')
+    file_ell.write('#t\tell(t)\n')
+    ellt_avg = my_chain.__calc_ell_avg__()
+    file_ell.write(str(0.)+'\t'+str(ellt_avg)+'\n')
+    file_ell.close()
+    
     if 1 :
     #try :
         for i in range(max_step) :
@@ -585,6 +596,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     
             # Save the number of lumens
             save_N(chain.time, len(chain.lumens_dict)-2, os.path.join(dir_name, 'sim_nlum.dat'))
+            # Save bridges lengths
+            ellt_avg = my_chain.__calc_ell_avg__()
+            save_ell(chain.time, ellt_avg, os.path.join(dir_name, 'sim_ell_avg.dat'))
             
             if stop==1 :
                 if stop_cause == 'end_simul':
@@ -694,8 +708,6 @@ def main(configname, args) :
         f.write('Winner : ' + str(int(my_chain.winner)))
         f.close()
         
-    
-    
     # Move the config file into the directory
     #os.rename(configname, os.path.join(dir_name, configname))
     

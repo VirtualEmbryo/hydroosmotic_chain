@@ -209,10 +209,12 @@ def load_file(filename, skiprows=0, max_rows=0) :
     time = []
     if max_rows != 0 :
         dat = np.loadtxt(filename, skiprows=skiprows, max_rows=max_rows)
-        print(dat)
+        print('Import successful !')
+        #print(dat)
     else : 
         dat = np.loadtxt(filename, skiprows=skiprows)
-        print(dat)
+        print('Import successful !')
+        #print(dat)
     
     Nmax = int(np.max(dat[:, 0]))
 
