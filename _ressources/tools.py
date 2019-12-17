@@ -205,9 +205,14 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
 # ============================ Loading ===================================
 # ========================================================================
 
-def load_file(filename) :
+def load_file(filename, skiprows=0, max_rows=0) :
     time = []
-    dat = np.loadtxt(filename)
+    if max_rows != 0 :
+        dat = np.loadtxt(filename, skiprows=skiprows, max_rows=max_rows)
+        print(dat)
+    else : 
+        dat = np.loadtxt(filename, skiprows=skiprows)
+        print(dat)
     
     Nmax = int(np.max(dat[:, 0]))
 
@@ -250,9 +255,12 @@ def load_file(filename) :
     
     return L_array, N_array, p_array
     
-def load_brfile(filename) :
+def load_brfile(filename, skiprows=0, max_rows=0) :
     time = []
-    dat = np.loadtxt(filename)
+    if max_rows != 0 :
+        dat = np.loadtxt(filename, skiprows=skiprows, max_rows=max_rows)
+    else : 
+        dat = np.loadtxt(filename, skiprows=skiprows)
     
     Nmax = int(np.max(dat[:, 0]))
 

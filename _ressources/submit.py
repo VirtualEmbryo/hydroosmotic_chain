@@ -40,7 +40,7 @@ subcmd = 'sbatch'
 queue = 'debug'
 runtime = '1-0:00'
 
-folder_path = '/share/mathieu.leverge/git/chain_lumen/'
+folder_path = '/share/mathieu.leverge/git/chain_lumen/_ressources/'
 
 def write_gen(directories, queue=queue, runtime=runtime) :
     nconfig=len(directories)
@@ -74,7 +74,7 @@ def write_s(config, n) :
     f = open(filename, 'w')
     f.write('#!/bin/bash\n')
     f.write('cd ' + config + '\n')
-    f.write('/share/mathieu.leverge/git/chain_lumen/chain.py config.conf')
+    f.write('/share/mathieu.leverge/git/chain_lumen/_ressources/chain.py config.conf')
     
     os.chmod(filename, 0700)
     return 0
