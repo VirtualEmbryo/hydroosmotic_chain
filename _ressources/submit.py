@@ -91,7 +91,7 @@ def main(args):
         elif arg.startswith('runtime=') :
             runtime = arg[len('runtime='):]
             
-        elif arg.startswth('cpu-per-task=') :
+        elif arg.startswith('cpu-per-task=') :
             cpu_per_task = int(arg[len('cpu-per-task='):])
             if cpu_per_task < 1 :
                 print('Error : too few cpus (0) per task assigned. Variable set to one.')
