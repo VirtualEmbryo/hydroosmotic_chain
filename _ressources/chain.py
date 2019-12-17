@@ -18,21 +18,34 @@ python3 chain.py config.conf [options]
 """
 import os, sys
 
-module_path = os.path.abspath(os.path.join('..'))
+module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 
 if module_path not in sys.path :
     sys.path.append(module_path)
+    #print(sys.path)
 
 import numpy as np
-import configparser
+try :
+    import configparser
+except :
+    import ConfigParser
 
 # homemade libraries
-
-import _ressources.flux as flux
-import _ressources.tools as tools
-import _ressources.network as net
-import _ressources.topology as tplg
-import _ressources.lumenclass as lc
+#try :
+if 1 :
+    import _ressources.flux as flux
+    import _ressources.tools as tools
+    import _ressources.network as net
+    import _ressources.topology as tplg
+    import _ressources.lumenclass as lc
+    #print('_ressources')
+#except :
+if 0 :
+    import flux as flux
+    import tools as tools
+    import network as net
+    import topology as tplg
+    import lumenclass as lc
 
 try : 
     import matplotlib.pyplot as plt
