@@ -81,7 +81,7 @@ def write_s(config, n) :
     return 0
 
 def main(args):
-    global subcmd, queue, runtime
+    global subcmd, queue, runtime, cpu_per_task
     list_dir = []
 
     for arg in args :
