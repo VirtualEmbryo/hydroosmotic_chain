@@ -31,16 +31,13 @@ except :
     import ConfigParser
 
 # homemade libraries
-#try :
-if 1 :
+try :
     import _ressources.flux as flux
     import _ressources.tools as tools
     import _ressources.network as net
     import _ressources.topology as tplg
     import _ressources.lumenclass as lc
-    #print('_ressources')
-#except :
-if 0 :
+except :
     import flux as flux
     import tools as tools
     import network as net

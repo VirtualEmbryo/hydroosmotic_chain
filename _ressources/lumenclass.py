@@ -6,8 +6,10 @@ module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 if module_path not in sys.path :
     sys.path.append(module_path)
 
-import _ressources.network as net
-
+try :
+    import _ressources.network as net
+except :
+    network as net
 # ============================================================
 # =================  Hydraulic Chain  ========================
 # ============================================================

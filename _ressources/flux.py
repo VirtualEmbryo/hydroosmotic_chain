@@ -7,8 +7,12 @@ module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 if module_path not in sys.path :
     sys.path.append(module_path)
 
-import _ressources.network as net
-import _ressources.topology
+try :
+    import _ressources.network as net
+    import _ressources.topology
+except :
+    import network as net
+    import topology
 
 def calc_fluxes(chain, threshold=0.5, flux_val=1e-2, viscosity=1e-3, e0=1e-2, kappa=1) :
     fl = np.zeros(chain.nb_lumens)

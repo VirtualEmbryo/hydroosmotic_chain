@@ -5,9 +5,12 @@ module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 
 if module_path not in sys.path :
     sys.path.append(module_path)
-
-import _ressources.network as net
-import _ressources.lumenclass as lc
+try :
+    import _ressources.network as net
+    import _ressources.lumenclass as lc
+except :
+    import network as net
+    import lumenclass as lc
 
 def topology(chain) :
     # Delete lumens
