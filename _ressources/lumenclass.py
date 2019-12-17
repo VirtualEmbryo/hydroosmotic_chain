@@ -9,7 +9,7 @@ if module_path not in sys.path :
 try :
     import _ressources.network as net
 except :
-    network as net
+    import network as net
 # ============================================================
 # =================  Hydraulic Chain  ========================
 # ============================================================
