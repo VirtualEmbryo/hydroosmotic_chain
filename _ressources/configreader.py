@@ -16,7 +16,6 @@ class Config() :
         s = f.readlines()
         f.close()
         return s
-    
 
     def read_config(self, string) :
         config = {}
@@ -63,3 +62,12 @@ class Config() :
                 print(str(sub_key) + ' = ' + str(self.config[key][sub_key]) )
             print('')
         return ''
+        
+    def has_option(self, option1, option2='') :
+        if len(option2) == 0 :
+            if option1 in self.categories() :
+                return True
+        else :
+            if option1 in self.config.keys() and option2 in self.config[option1].keys()  :
+                return True
+        return False

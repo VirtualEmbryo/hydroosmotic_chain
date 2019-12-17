@@ -232,14 +232,14 @@ def load_config(filename) :
         my_chain.pumping = config['pumping']['pattern']
         
     else :
-        #if config.has_option('sim', 'seed') and len(config['sim']['seed']) > 0 :
-        if 'seed' in config['sim'].keys() and len(config['sim']['seed']) > 0 :
+        if conf.has_option('sim', 'seed') and len(config['sim']['seed']) > 0 :
+        #if 'sim' in config.keys() and 'seed' in config['sim'].keys() and len(config['sim']['seed']) > 0 :
             np.random.seed(int(config['sim']['seed']))
             
         my_chain = lc.Osmotic_Chain(nb_lumens = int(config['sim']['M']), taus=float(config['hydroosmotic']['taus']), tauv=float(config['hydroosmotic']['tauv']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
         
-        #if config.has_option('pumping', 'pattern') :
-        if 'pattern' in config['pumping'].keys() : 
+        if conf.has_option('pumping', 'pattern') :
+        #if 'pumping' in config.keys() and 'pattern' in config['pumping'].keys() : 
             #print('No pumping')    
             my_chain.pumping = config['pumping']['pattern']
             if config['pumping']['pattern'] == 'normal' :
