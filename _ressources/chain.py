@@ -13,6 +13,9 @@ python3 chain.py config.conf [options]
 
     Contains
     --------
+
+    Required
+    --------
     
 
 """
@@ -22,13 +25,8 @@ module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 
 if module_path not in sys.path :
     sys.path.append(module_path)
-    #print(sys.path)
 
 import numpy as np
-try :
-    import configparser
-except :
-    import ConfigParser as configparser
 
 # homemade libraries
 try :
@@ -37,17 +35,18 @@ try :
     import _ressources.network as net
     import _ressources.topology as tplg
     import _ressources.lumenclass as lc
+    import _ressources.configreader as configreader
 except :
     import flux as flux
     import tools as tools
     import network as net
     import topology as tplg
     import lumenclass as lc
+    import configreader
 
 try : 
     import matplotlib.pyplot as plt
     MATPLOTLIB_BOOL = True
-    #print('pyplot imported')
 except : 
     MATPLOTLIB_BOOL = False
     pass        
@@ -210,8 +209,13 @@ def run_simul(step, chain, t0, threshold=0.5, motion=False, flux_type='standard'
 def load_config(filename) :
     global my_chain
     
-    config = configparser.ConfigParser()
-    config.read(filename)
+    
+    #config = configparser.ConfigParser()
+    conf = configreader.Config()
+    #print(config)
+    #print(filename)
+    
+    config = conf.read(filename)
 
     
     path = config['sim']['path']
@@ -226,13 +230,16 @@ def load_config(filename) :
         my_chain.__import_config__(lumens_array, bridges_array, eps = float(config['topology']['eps']))
         
         my_chain.pumping = config['pumping']['pattern']
+        
     else :
-        if config.has_option('sim', 'seed') and len(config['sim']['seed']) > 0 :
+        #if config.has_option('sim', 'seed') and len(config['sim']['seed']) > 0 :
+        if 'seed' in config['sim'].keys() and len(config['sim']['seed']) > 0 :
             np.random.seed(int(config['sim']['seed']))
             
         my_chain = lc.Osmotic_Chain(nb_lumens = int(config['sim']['M']), taus=float(config['hydroosmotic']['taus']), tauv=float(config['hydroosmotic']['tauv']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
         
-        if config.has_option('pumping', 'pattern') :
+        #if config.has_option('pumping', 'pattern') :
+        if 'pattern' in config['pumping'].keys() : 
             #print('No pumping')    
             my_chain.pumping = config['pumping']['pattern']
             if config['pumping']['pattern'] == 'normal' :
@@ -678,14 +685,21 @@ def main(configname, args) :
     solver = config['integration']['solver']
     
     dir_name = config['sim']['outdir']
+    # Clean dir_name if not empty
+    if len(os.listdir(dir_name)) > 0 :
+        for elem in os.listdir(dir_name) :
+            os.remove(os.path.join(dir_name, elem))
     
+    # Try to see if savefig is valid for saving figures
     if MATPLOTLIB_BOOL == True :
         savefig = eval(config['sim']['savefig'])
     else :
         savefig = False
-        
+    
+    # Save initial state of the chain (for reconstruction)
     my_chain.__save__(os.path.join(dir_name, 'init_chain.dat'))
     
+    # If needed, create a folder for pictures filees
     pics_dirname=''
     if savefig :
         pics_dirname = os.path.join(dir_name,'pics')
@@ -702,6 +716,7 @@ def main(configname, args) :
     # Run Simulation
     end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname)
     
+    # Add the winner to the init_chain.dat
     if end == 2 :
         f = open(os.path.join(dir_name, 'init_chain.dat'), 'a+')
         f.write('========= END =========\n')

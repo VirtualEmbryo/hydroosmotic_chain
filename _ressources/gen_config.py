@@ -14,8 +14,20 @@ gen_config.py config.conf.tpl [options]
 """
 
 import os, sys
-import configparser
+
+module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
+
+if module_path not in sys.path :
+    sys.path.append(module_path)
+
+try :
+    import _ressources.configreader as configreader
+except :
+    import configreader as configreader
+
 import numpy.random as rand
+
+
 
 def create_directory(dirname, zfill=4, nmin=0) :
     
@@ -31,10 +43,12 @@ def cp_config(config, foldername, seed=True) :
     
     #config['sim']['outdir'] = foldername
     if seed :
-        config['sim']['seed'] = str(int(rand.random()*1e9))
+        config.add('sim', 'seed', str(int(rand.random()*1e9)))
+        #config['sim']['seed'] = str(int(rand.random()*1e9))
     
-    with open(os.path.join(foldername, 'config.conf'), 'w') as configfile:
-        config.write(configfile)
+    #with open(os.path.join(foldername, 'config.conf'), 'w') as configfile:
+    #    config.write(configfile)
+    config.write(os.path.join(foldername, 'config.conf'))
     return ;
     
 
@@ -54,7 +68,7 @@ def main(conf_name, args) :
             seed = eval(arg[len('seed='):])
 
     # Read config file        
-    config = configparser.ConfigParser()
+    config = configreader.Config()
     config.read(conf_name)
     
     # Create directories
