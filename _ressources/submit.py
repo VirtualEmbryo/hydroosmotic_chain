@@ -73,7 +73,6 @@ def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_ta
 
 def write_s(confname, script, dirconfig, n) :
     #global confname, script
-    print(script)
     filename='job' + str(n)
     f = open(filename, 'w')
     f.write('#!/bin/bash\n')
@@ -123,12 +122,11 @@ def main(args):
         for elem in list_files :
             if elem.endswith('.conf') :
                 confname = elem
-        print(dirconfig, confname)
         write_s(confname, script, dirconfig, n)
         n += 1
         
     submitname = 'sim.sh'
-    #subprocess.call([subcmd + ' ' + submitname], shell = True)
+    subprocess.call([subcmd + ' ' + submitname], shell = True)
     return ;
 
 

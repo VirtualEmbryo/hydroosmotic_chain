@@ -36,7 +36,6 @@ def create_directory(dirname, zfill=4, nmin=0) :
     while os.path.isdir( dirname + str(nmin).zfill(zfill) ) :
         nmin += 1
         foldername = dirname + str(nmin).zfill(zfill) + '/'
-    print(foldername)
     os.mkdir(foldername)
     return os.path.abspath(foldername)
     
@@ -76,7 +75,6 @@ def main(conf_name, args) :
     # Create directories
     for n in range(nsim) :
         foldername = create_directory(dirname)
-        print(foldername)
         cp_config(config, foldername, seed=seed)
         
     return ;
