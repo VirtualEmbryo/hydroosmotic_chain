@@ -37,7 +37,7 @@ Creation : 28/09/18
 import os, sys
 import subprocess
 subcmd = 'sbatch'
-queue = 'bigmem'
+queue = 'debug'
 runtime = '1-0:00'
 cpu_per_task = 1
 
