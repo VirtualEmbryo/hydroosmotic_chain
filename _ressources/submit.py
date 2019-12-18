@@ -2,7 +2,7 @@
 # submit.py
 
 """
-submit.py script.py config???? [options]
+submit.py script.py outdir???? [options]
 
     Python script for simulation submission to a cluster. It creates submission bash files for Slurm.
 
@@ -11,7 +11,7 @@ submit.py script.py config???? [options]
     script.py : python file
         The script to execute for data analysis. Must be a python script (.py).
     config???? : list of directories
-        List of directories where the script.py has to be executed.
+        List of directories where the script.py has to be executed. Must contains a .conf file
 
     Options
     -------
@@ -42,6 +42,8 @@ runtime = '1-0:00'
 cpu_per_task = 1
 
 folder_path = '/share/mathieu.leverge/git/chain_lumen/_ressources/'
+script = '~/git/chain_lumens/_ressources/chain.py'
+confname = 'config.conf'
 
 def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task) :
     nconfig=len(directories)
@@ -69,23 +71,26 @@ def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_ta
     os.chmod(filename, 0700)
     return filename
 
-def write_s(config, n) :
-    global folder_path
+def write_s(confname, script, dirconfig, n) :
+    #global confname, script
+    print(script)
     filename='job' + str(n)
     f = open(filename, 'w')
     f.write('#!/bin/bash\n')
-    f.write('cd ' + config + '\n')
-    f.write('/share/mathieu.leverge/git/chain_lumen/_ressources/chain.py config.conf')
+    f.write('cd ' + dirconfig + '\n')
+    f.write(script + ' ' + confname)
     
     os.chmod(filename, 0700)
     return 0
 
 def main(args):
-    global subcmd, queue, runtime, cpu_per_task
+    global subcmd, queue, runtime, cpu_per_task, script, confname
     list_dir = []
 
     for arg in args :
-        if arg.startswith('queue=') :
+        if arg.endswith('.py') :
+            script = os.path.abspath(arg)
+        elif arg.startswith('queue=') :
             queue = arg[len('queue='):]
             
         elif arg.startswith('runtime=') :
@@ -98,6 +103,7 @@ def main(args):
                 cpu_per_task = 1
             elif cpu_per_task > 1 :
                 print(str(cpu_per_task) + 'assigned for one task.')
+        
         else :
             list_dir += [arg]
 
@@ -112,12 +118,17 @@ def main(args):
     f = write_gen(list_dir, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task)
     n = 1
     
-    for d in list_dir :
-        write_s(d, n)
+    for dirconfig in list_dir :
+        list_files = os.listdir(dirconfig)
+        for elem in list_files :
+            if elem.endswith('.conf') :
+                confname = elem
+        print(dirconfig, confname)
+        write_s(confname, script, dirconfig, n)
         n += 1
         
     submitname = 'sim.sh'
-    subprocess.call([subcmd + ' ' + submitname], shell = True)
+    #subprocess.call([subcmd + ' ' + submitname], shell = True)
     return ;
 
 

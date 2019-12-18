@@ -209,17 +209,12 @@ def run_simul(step, chain, t0, threshold=0.5, motion=False, flux_type='standard'
 def load_config(filename) :
     global my_chain
     
-    
-    #config = configparser.ConfigParser()
+    # Import config
     conf = configreader.Config()
-    #print(config)
-    #print(filename)
-    
-    config = conf.read(filename)
-
-    
+    config = conf.read(filename)    
     path = config['sim']['path']
     
+    # Import prewritten configuration if specified
     if len(path) > 0 :
         print('Import config from ' + path)      
         lumens_array = np.loadtxt(path+'lumens.dat', delimiter = '\t', comments = '#')
@@ -232,15 +227,14 @@ def load_config(filename) :
         my_chain.pumping = config['pumping']['pattern']
         
     else :
+        # Seed
         if conf.has_option('sim', 'seed') and len(config['sim']['seed']) > 0 :
-        #if 'sim' in config.keys() and 'seed' in config['sim'].keys() and len(config['sim']['seed']) > 0 :
             np.random.seed(int(config['sim']['seed']))
             
-        my_chain = lc.Osmotic_Chain(nb_lumens = int(config['sim']['M']), taus=float(config['hydroosmotic']['taus']), tauv=float(config['hydroosmotic']['tauv']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
+        my_chain = lc.Osmotic_Chain(nb_lumens = int(config['sim']['nlumens']), taus=float(config['hydroosmotic']['taus']), tauv=float(config['hydroosmotic']['tauv']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
         
-        if conf.has_option('pumping', 'pattern') :
-        #if 'pumping' in config.keys() and 'pattern' in config['pumping'].keys() : 
-            #print('No pumping')    
+        # Pumping
+        if conf.has_option('pumping', 'pattern') : 
             my_chain.pumping = config['pumping']['pattern']
             if config['pumping']['pattern'] == 'normal' :
                 
@@ -688,7 +682,8 @@ def main(configname, args) :
     # Clean dir_name if not empty
     if len(os.listdir(dir_name)) > 0 :
         for elem in os.listdir(dir_name) :
-            os.remove(os.path.join(dir_name, elem))
+            if not elem.endswith('.conf') :
+                os.remove(os.path.join(dir_name, elem))
     
     # Try to see if savefig is valid for saving figures
     if MATPLOTLIB_BOOL == True :
@@ -703,9 +698,7 @@ def main(configname, args) :
     pics_dirname=''
     if savefig :
         pics_dirname = os.path.join(dir_name,'pics')
-        #print(pics_dirname)
         try :
-        #if 1:
             os.mkdir(pics_dirname)
             print(pics_dirname)
         except :

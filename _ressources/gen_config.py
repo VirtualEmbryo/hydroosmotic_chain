@@ -27,21 +27,22 @@ except :
 
 import numpy.random as rand
 
-
+outdir = 'run'
+datadir = '~/git/chain_lumen/_data'
 
 def create_directory(dirname, zfill=4, nmin=0) :
     
     foldername = dirname + str(nmin).zfill(zfill)
     while os.path.isdir( dirname + str(nmin).zfill(zfill) ) :
         nmin += 1
-        foldername = dirname + str(nmin).zfill(zfill)
-        
+        foldername = dirname + str(nmin).zfill(zfill) + '/'
+    print(foldername)
     os.mkdir(foldername)
-    return foldername
+    return os.path.abspath(foldername)
     
 def cp_config(config, foldername, seed=True) :
     
-    #config['sim']['outdir'] = foldername
+    config.add('sim', 'outdir', foldername)
     if seed :
         config.add('sim', 'seed', str(int(rand.random()*1e9)))
         #config['sim']['seed'] = str(int(rand.random()*1e9))
@@ -53,8 +54,9 @@ def cp_config(config, foldername, seed=True) :
     
 
 def main(conf_name, args) :
+    global datadir
     # default args
-    dirname = 'out'
+    dirname = outdir
     nsim = 1
     seed = True
     
@@ -74,6 +76,7 @@ def main(conf_name, args) :
     # Create directories
     for n in range(nsim) :
         foldername = create_directory(dirname)
+        print(foldername)
         cp_config(config, foldername, seed=seed)
         
     return ;
