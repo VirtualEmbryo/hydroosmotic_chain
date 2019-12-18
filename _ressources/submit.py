@@ -42,7 +42,7 @@ runtime = '1-0:00'
 cpu_per_task = 1
 
 folder_path = '/share/mathieu.leverge/git/chain_lumen/_ressources/'
-script = '~/git/chain_lumens/_ressources/chain.py'
+script = '~/git/chain_lumen/_ressources/chain.py'
 confname = 'config.conf'
 
 def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task) :
