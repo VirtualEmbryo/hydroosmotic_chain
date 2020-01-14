@@ -15,7 +15,7 @@ except :
 # ============================================================
 
 class Chain :
-    def __init__(self, nb_lumens, e0 = 0.1, theta=np.pi/3., l_dis=1e-2, l_merge=1e-2, pbc=True) :
+    def __init__(self, nb_lumens, e0 = 0.1, theta=np.pi/3., l_dis=1e-2, l_merge=1e-2, pbc=False) :
         self.time = 0
         
         self.nb_lumens = nb_lumens
@@ -39,7 +39,7 @@ class Chain :
         self.rec = {} 
         self.rec_br = {}
         
-    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3) :
+    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, ca_lumen_list=[], ca_bridge_list=[]) :
         lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
         for b in range(len(bridges)) :
@@ -66,6 +66,10 @@ class Chain :
         print('Type         : '+str(self.lumen_type))
         print('Total length : '+str(self.total_length))
         print('Current Time : '+str(self.time))
+        print('======= PARAMETERS =======')
+        print('tau : '+str(self.tau))
+        print('kappa : '+str(self.kappa))
+        print('gammma : '+str(self.gamma))
         print('======= LUMENS =======')
         print('Nb lumens : '+str(self.nb_lumens))
         for k in list(self.lumens_dict.keys()) :
@@ -75,6 +79,42 @@ class Chain :
             print(self.bridges_dict[b])
         return ''
     
+    def __copy__(self) :
+        attributes = self.__dict__.keys()
+        
+        cp_chain = Chain(self.nb_lumens, self.e0, self.theta, self.l_dis, self.l_merge, self.pbc)
+        
+        cp_chain.lumens_dict = {k : self.lumens_dict[k].__copy__() for k in self.lumens_dict.keys()}
+        cp_chain.bridges_dict = {b : self.bridges_dict[b].__copy__() for b in self.bridges_dict.keys()}
+        
+        # other attributes
+        cp_chain.total_length = self.total_length
+        cp_chain.time = self.time
+        cp_chain.rec = self.rec
+        cp_chain.rec_br = self.rec_br
+        cp_chain.nmax = self.nmax
+        cp_chain.events = self.events
+        cp_chain.kappa = self.kappa
+        cp_chain.tau = self.tau
+        cp_chain.gamma = self.gamma
+        
+        return cp_chain
+        
+    def __import_config__(self, lumens, bridges, eps=1e-3) :
+            
+        self.nb_lumens = len(lumens)-2
+        for m in range(self.nb_lumens+2) :
+            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length = lumens[m, 2], init_pos = lumens[m, 1], theta = self.theta)
+        
+        for b in range(len(bridges)) :
+            self.bridges_dict[int(bridges[b, 0])] = Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3])
+            
+        net.calc_ell_list(self)
+        self.total_length = 2*np.sum(lumens[:, 2]) + np.sum(bridges[:, 3])
+        
+        if abs(self.lumens_dict[-1].pos - self.total_length) > 1e-3 :
+            print('The right border position ('+str(self.lumens_dict[-1].pos)+') does not correspond to total length ('+str(self.total_length)+')')
+        
     def __give_positions__(self) :
         positions = np.zeros((self.nb_lumens+2, 2))
         n = 0
@@ -99,10 +139,82 @@ class Chain :
         self.rec_br[self.time] = {}
         
         for k in self.lumens_dict.keys() :
-            self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].nb_ions, self.lumens_dict[k].pos]
+            self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].pos]
         for b in self.bridges_dict.keys() :
             self.rec_br[self.time][b] = [self.bridges_dict[b].length]
-    
+            
+    def __merge__(self, k, Lumen_i, Lumen_j) :
+        """
+
+        """
+        print('Hydraulic')
+        pos_i, pos_j = self.lumens_dict[i].pos, self.lumens_dict[j].pos
+        L_i, L_j = self.lumens_dict[i].length, self.lumens_dict[j].length
+        mu_i, mu_j = self.lumens_dict[i].mu, self.lumens_dict[j].mu
+        mu_k = 0.5*(mu_i + mu_j)
+        area_i, area_j = L_i**2 / mu_i, L_j**2 / mu_j
+        
+        area_k = area_i+area_j
+        L_k = np.sqrt(area_k * mu_k)
+        pos_k = (pos_i*area_i + pos_j*area_j) / area_k
+        
+        #nb_ions_k = self.lumens_dict[i].nb_ions + self.lumens_dict[j].nb_ions
+        #eps_k = 0.5*(self.lumens_dict[i].eps + self.lumens_dict[j].eps)
+        #ca_k = 0.5*(self.lumens_dict[i].ca + self.lumens_dict[j].ca)
+        
+        self.lumens_dict[k] = OLumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta)
+        
+        return pos_k, L_k
+        
+    def __save__(self, filename) :
+        s = ''
+        s += '======= CHAIN =======' + '\n'
+        s += 'Type         : '+str(self.lumen_type) + '\n'
+        s += 'Total length : '+str(self.total_length) + '\n'
+        s += 'Current Time : '+str(self.time) + '\n'
+        #s += 'Screening lengths : ' + '\n'
+        #s += '        xi_s = '+str(self.xis) + '\n'
+        #s += '        xi_v = '+str(self.xiv) + '\n'
+        #s += 'Permeation times :' + '\n'
+        #s += '       tau_s = '+str(self.taus) + '\n'
+        #s += '       tau_v = '+str(self.tauv) + '\n'
+        
+        s += '======= LUMENS =======' + '\n'
+        s += 'Nb lumens : '+str(self.nb_lumens) + '\n'
+        for k in list(self.lumens_dict.keys()) :
+            s += self.lumens_dict[k].__save__() + '\n'
+        s += '======= BRIDGES ======' + '\n'
+        for b in self.bridges_dict.keys() :
+            s += self.bridges_dict[b].__save__() + '\n'
+        f = open(filename, 'w')
+        f.write(s)
+        f.close()
+        return s
+        
+    def __calc_ell_avg__(self) :
+        L = []
+        if len(self.bridges_dict.keys()) > 2 :
+            for b in self.bridges_dict.keys() :
+                if self.bridges_dict[b].lumen1 != 0 and self.bridges_dict[b].lumen1 != -1 and self.bridges_dict[b].lumen2 != 0 and self.bridges_dict[b].lumen2 != -1 :
+                    L += [self.bridges_dict[b].length]
+        
+            ellt_avg = np.average(L)
+        
+            return ellt_avg
+        else : return None
+        
+    def __L_vec__(self) :
+        L_vec = {}
+        for j in self.lumens_dict.keys() :
+            L_vec[j] = self.lumens_dict[j].length
+        return L_vec
+        
+    def __ell_vec__(self) :
+        ell_vec = {}
+        for b in self.bridges_dict.keys() :
+            ell_vec[b] = self.bridges_dict[b].length
+        return ell_vec
+        
 class Lumen :
     def __init__(self, index, init_pos, init_length, theta) :
         self.index = index
@@ -148,10 +260,11 @@ class Lumen :
     def __str__(self) :
         return "Lumen {0} is at position {1:.5f} with length {2:.5f}".format(self.index, self.pos, self.length)
         
-    def __save__(self, time) :
-        self.length_list += [self.length]
-        self.pos_list += [self.pos]
-        #return 1
+    def __save__(self) :
+        return "Lumen {0} is at position {1:.3f} with length {2:.3f}".format(self.index, self.pos, self.length)
+    
+    def __copy__(self) :
+        return Lumen(self.index, self.init_pos, self.init_length, self.theta)
         
 class Bridge :
     def __init__(self, index, lumen1, lumen2, length) :
@@ -162,19 +275,25 @@ class Bridge :
 
     def __str__(self) :
         return "Bridge {0} : ({1}, {2}) has length {3:.5}".format(self.index, self.lumen1, self.lumen2, self.length)
-
+    
+    def __save__(self) :
+        return "Bridge {0} : ({1}, {2}) has length {3:.5}".format(self.index, self.lumen1, self.lumen2, self.length)
+    
+    def __copy__(self) :
+        return Bridge(self.index, self.lumen1, self.lumen2, self.length)
+        
 # ============================================================
 # ==================  Osmotic Chain  =========================
 # ============================================================
 
 class Osmotic_Chain(Chain):
-    def __init__(self, nb_lumens, taus, tauv, xis=1., xiv=1., e0 = 0.1, theta=np.pi/3., l_dis=1e-2, l_merge=1e-2, pbc=True) :
+    def __init__(self, nb_lumens, e0 = 0.1, theta=np.pi/3., l_dis=1e-2, l_merge=1e-2, pbc=False) :
         Chain.__init__(self, nb_lumens, e0 = e0, theta=theta, l_dis=l_dis, l_merge=l_merge, pbc=pbc)
         self.lumen_type = 'hydroosmotic'
-        self.xis  = xis
-        self.xiv  = xiv
-        self.taus = taus
-        self.tauv = tauv
+        #self.xis  = xis
+        #self.xiv  = xiv
+        #self.taus = taus
+        #self.tauv = tauv
         
     def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, ca_lumen_list=[], ca_bridge_list=[], equilibrium=True, nions_avg=2, nions_std=1.) :
         
@@ -255,7 +374,7 @@ class Osmotic_Chain(Chain):
     def __copy__(self) :
         attributes = self.__dict__.keys()
         
-        cp_chain = Osmotic_Chain(self.nb_lumens, self.xis, self.xiv, self.taus, self.tauv, self.e0, self.theta, self.l_dis, self.l_merge, self.pbc)
+        cp_chain = Osmotic_Chain(self.nb_lumens, self.e0, self.theta, self.l_dis, self.l_merge, self.pbc)
         
         cp_chain.lumens_dict = {k : self.lumens_dict[k].__copy__() for k in self.lumens_dict.keys()}
         cp_chain.bridges_dict = {b : self.bridges_dict[b].__copy__() for b in self.bridges_dict.keys()}
@@ -268,6 +387,10 @@ class Osmotic_Chain(Chain):
         cp_chain.nmax = self.nmax
         cp_chain.events = self.events
         
+        cp_chain.taus = self.taus
+        cp_chain.tauv = self.tauv
+        cp_chain.xis = self.xis
+        cp_chain.xiv = self.xiv
         
         return cp_chain
         
@@ -363,7 +486,33 @@ class Osmotic_Chain(Chain):
             return ellt_avg
         else : return None
                 
-    
+    def __merge__(self, k, i, j) :
+        """
+        
+        """
+        print('Hydroosmotic')
+        # Lumen
+        pos_i, pos_j = self.lumens_dict[i].pos, self.lumens_dict[j].pos
+        L_i, L_j = self.lumens_dict[i].length, self.lumens_dict[j].length
+        mu_i, mu_j = self.lumens_dict[i].mu, self.lumens_dict[j].mu
+        mu_k = 0.5*(mu_i + mu_j)
+        area_i, area_j = L_i**2 / mu_i, L_j**2 / mu_j
+        
+        area_k = area_i+area_j
+        L_k = np.sqrt(area_k * mu_k)
+        pos_k = (pos_i*area_i + pos_j*area_j) / area_k
+        
+        nb_ions_k = self.lumens_dict[i].nb_ions + self.lumens_dict[j].nb_ions
+        eps_k = 0.5*(self.lumens_dict[i].eps + self.lumens_dict[j].eps)
+        ca_k = 0.5*(self.lumens_dict[i].ca + self.lumens_dict[j].ca)
+        
+        self.lumens_dict[k] = Osmotic_Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, init_nb_ions=nb_ions_k, eps=eps_k, ca=ca_k)
+        
+        # Bridge
+        
+        
+        return pos_k, L_k
+        
 class Osmotic_Lumen(Lumen) :
     def __init__(self, index, init_pos, init_length, init_nb_ions, theta, eps, ca) :
         Lumen.__init__(self, index, init_pos, init_length, theta)

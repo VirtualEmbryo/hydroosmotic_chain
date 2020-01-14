@@ -57,21 +57,29 @@ def standard_flux(lumens_dict, threshold, flux_val) :
 # ========================== Hydraulic ===================================
 # ========================================================================
 
-def hydraulic_flux(chain, kappa) :
+def hydraulic_flux2(chain, kappa) :
     flux = {}
     lumens_dict, bridges_dict = chain.lumens_dict, chain.bridges_dict
     for j in lumens_dict.keys() :
+        
+        #phi_j = 0.5*kappa*lumens_dict[j].mu
+        
         if j != 0 and j != -1 :
             i, k = net.find_neighbors(j, bridges_dict)                   # indices of the connected lumens
             br_ij, br_jk = net.connected_bridges(j, bridges_dict)        # indices of the connected bridges
             
             if i != 0 and i != -1 and k != 0 and k != -1 :
                 l_ij, l_jk = bridges_dict[br_ij].length, bridges_dict[br_jk].length
-                A_i = lumens_dict[i].area
-                A_j = lumens_dict[j].area
-                A_k = lumens_dict[k].area
+                
+                L_i = lumens_dict[i].length
+                L_j = lumens_dict[j].length
+                L_k = lumens_dict[k].length
+                
+                rho_i = np.sin(lumens_dict[i].theta)*chain.gamma/chain.total_length
+                rho_j = np.sin(lumens_dict[j].theta)*chain.gamma/chain.total_length
+                rho_k = np.sin(lumens_dict[k].theta)*chain.gamma/chain.total_length
 
-                flux[j] = kappa/l_ij * (1./np.sqrt(A_i)-1./np.sqrt(A_j)) + kappa/l_jk * (1./np.sqrt(A_k)-1./np.sqrt(A_j))
+                flux[j] = kappa/l_ij * (1./L_i-1./L_j) + kappa/l_jk * (1./L_k-1./L_j)
                 
             elif (i==0 and k==-1) or (i==-1 and k==0) :
                 #print 'no connection'
@@ -80,18 +88,27 @@ def hydraulic_flux(chain, kappa) :
             elif (i == 0 or i == -1) and (k!= 0 or k!= -1) :
                 #print i, k
                 #print('border left')
-                A_j = lumens_dict[j].area
-                A_k = lumens_dict[k].area
+                L_j = lumens_dict[j].length
+                L_k = lumens_dict[k].length
+                
                 l_jk = bridges_dict[br_jk].length
-                flux[j] = 1./l_jk * (1./np.sqrt(A_k)-1./np.sqrt(A_j)) * kappa
+                
+                rho_j = np.sin(lumens_dict[j].theta)*chain.gamma/chain.total_length
+                rho_k = np.sin(lumens_dict[k].theta)*chain.gamma/chain.total_length
+                
+                flux[j] = 1./l_jk * (1./L_k-1./L_j) * kappa
                 
             elif (k == 0 or k == -1) and (i != 0 or i != -1) :
                 #print i, k
                 #print('border right')
-                A_i = lumens_dict[i].area
-                A_j = lumens_dict[j].area
+                L_i = lumens_dict[i].length
+                L_j = lumens_dict[j].length
                 l_ij = bridges_dict[br_ij].length
-                flux[j] = 1./l_ij * (1./np.sqrt(A_i)-1./np.sqrt(A_j)) * kappa
+                
+                rho_i = np.sin(lumens_dict[i].theta)*chain.gamma/chain.total_length
+                rho_j = np.sin(lumens_dict[j].theta)*chain.gamma/chain.total_length
+                
+                flux[j] = 1./l_ij * (1./L_i-1./L_j) * kappa
         else :
             flux[j] = 0.
             
@@ -99,11 +116,64 @@ def hydraulic_flux(chain, kappa) :
         flux[(bridges_dict[b].lumen1, bridges_dict[b].lumen2)] = -(np.sqrt(flux[bridges_dict[b].lumen1]) + np.sqrt(flux[bridges_dict[b].lumen2]))
     return flux
 
+def func_Lj_hydraulic(index, t, L_vec, ell_vec, chain) :
+    # CALCULATE THE FLUXES
+    i, k = net.leftright_neighbors(index, chain)
+    
+    Jjh_left = func_JLh(i_left = i, i_right = index, L_vec = L_vec, ell_vec = ell_vec, chain = chain)
+    Jjh_right = func_JRh(i_left = index, i_right = k, L_vec = L_vec, ell_vec = ell_vec, chain = chain)
+    
+    Jjh = Jjh_left + Jjh_right
+    
+    return chain.tau*Jjh
+    
+def func_JLh(i_left, i_right, L_vec, ell_vec, chain) :
+    if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
+        return 0.
+    
+    b = net.find_bridge(i_left, i_right, chain) # index of the connecting bridge
+    
+    ellt = ell_vec[b]
+    L_L, L_R = L_vec[i_left], L_vec[i_right]
+    L0   = L_vec[i_right] + L_vec[i_left] + ellt
+    
+    #chis  = chain.xis / ellt
+    
+    mu_R  = chain.lumens_dict[i_right].mu
+    
+    phi_R = 0.5*chain.kappa*mu_R / L0**2
+    rho_L = chain.gamma * np.sin(chain.theta) / L0
+    rho_R = chain.gamma * np.sin(chain.theta) / L0
+    #ca_LR = chain.bridges_dict[b].ca    
+    
+    return phi_R / (ellt*L_R)*(rho_L/L_L - rho_R / L_R)
+    
+def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
+    if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
+        return 0.
+    
+    b = net.find_bridge(i_left, i_right, chain) # index of the connecting bridge
+    
+    ellt = ell_vec[b]
+    L_L, L_R = L_vec[i_left], L_vec[i_right]
+    L0   = L_vec[i_right] + L_vec[i_left] + ellt
+    
+    #chis  = chain.xis / ellt
+    
+    mu_L  = chain.lumens_dict[i_left].mu
+    
+    phi_L = 0.5*chain.kappa*mu_L / L0**2
+    rho_L = chain.gamma * np.sin(chain.theta) / L0
+    rho_R = chain.gamma * np.sin(chain.theta) / L0
+    #ca_LR = chain.bridges_dict[b].ca    
+    
+    return phi_L / (ellt*L_L)*(rho_R/L_R - rho_L / L_L)
+
 # ========================================================================
 # ===================== Osmotic Hydraulic ================================
 # ========================================================================
 
-def hydroosmotic_flux(chain, left_v_flux=0., left_s_flux=0., right_v_flux=0., right_s_flux=0.) :    
+def hydroosmotic_flux2(chain, left_v_flux=0., left_s_flux=0., right_v_flux=0., right_s_flux=0.) :    
     # Calculate the flux
     lumens_dict, bridges_dict = chain.lumens_dict, chain.bridges_dict
     taus, tauv = chain.taus, chain.tauv

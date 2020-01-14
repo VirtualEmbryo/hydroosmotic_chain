@@ -158,7 +158,7 @@ def clear_folder(dir_name) :
             print('Error : directory ' + dir_name + ' not cleaned...')
             return 2
             
-def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='') :
+def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='', chain_type='hydroosmotic') :
     try :
         os.mkdir(folder)
     except : pass
@@ -173,16 +173,21 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
     file_br = open(os.path.join(folder, filename_bridges), 'a+')
     
     time_list = np.sort(list(chain.rec.keys()))
-    
+
     for t in time_list :
         s = ''
         for n in chain.rec[t].keys() :
+            
             if n != 0 and n != -1 :
                 if 1 :
-                    s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\t' + str(chain.rec[t][n][2])+ '\n'
+                    if chain_type == 'hydroosmotic' :
+                        s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\t' + str(chain.rec[t][n][2])+ '\n'
+                    elif chain_type == 'hydraulic' :
+                        s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\n'
                 else :
+                    #print(chain.rec[t][n][0], chain.rec[t][n][1])
                     print(chain.rec[t].keys())
-                    print(chain)
+                    #print(chain)
         
         file_all.write(s)
         
@@ -203,57 +208,64 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
 # ============================ Loading ===================================
 # ========================================================================
 
-def load_file(filename, skiprows=0, max_rows=0) :
+def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
     time = []
     if max_rows != 0 :
         dat = np.loadtxt(filename, skiprows=skiprows, max_rows=max_rows)
         print('Import successful !')
-        #print(dat)
     else : 
         dat = np.loadtxt(filename, skiprows=skiprows)
         print('Import successful !')
-        #print(dat)
     
     Nmax = int(np.max(dat[:, 0]))
 
     L_a = {}
-    N_a = {}
     p_a = {}
+    
+    if hydroosmotic : N_a = {}
+    
     for i in range(len(dat)) :
         t = dat[i, 1]
         if t not in L_a.keys() :
             L_a[t] = {}
-            N_a[t] = {}
             p_a[t] = {}
-    
+            if hydroosmotic : N_a[t] = {}
+            
+        
         L_a[t][int(dat[i, 0])] = dat[i, 2]
-        N_a[t][int(dat[i, 0])] = dat[i, 3]
-        p_a[t][int(dat[i, 0])] = dat[i, 4]
+        if hydroosmotic : 
+            N_a[t][int(dat[i, 0])] = dat[i, 3]
+            p_a[t][int(dat[i, 0])] = dat[i, 4]
+        else :
+            p_a[t][int(dat[i, 0])] = dat[i, 3]
 
     L_array = np.zeros(( len(L_a.keys()), Nmax+1 ))
-    N_array = np.zeros(( len(N_a.keys()), Nmax+1 ))
     p_array = np.zeros(( len(p_a.keys()), Nmax+1 ))
+    if hydroosmotic : N_array = np.zeros(( len(N_a.keys()), Nmax+1 ))
 
     step = -1
     for k in L_a.keys() :
         step += 1
         L_temp = [k]
-        N_temp = [k]
         p_temp = [k]
+        if hydroosmotic : N_temp = [k]
         for j in range(1, Nmax+1) :
             if j in L_a[k].keys() :
                 L_temp += [L_a[k][j]]
-                N_temp += [N_a[k][j]]
                 p_temp += [p_a[k][j]]
+                if hydroosmotic : N_temp += [N_a[k][j]]
             else :
                 L_temp += [None]
-                N_temp += [None]
                 p_temp += [None]
+                if hydroosmotic : N_temp += [None]
         L_array[step] = np.array(L_temp)
-        N_array[step] = np.array(N_temp)
+        if hydroosmotic : N_array[step] = np.array(N_temp)
         p_array[step] = np.array(p_temp)
     
-    return L_array, N_array, p_array
+    if hydroosmotic : 
+        return L_array, N_array, p_array
+    else :
+        return L_array, p_array
     
 def load_brfile(filename, skiprows=0, max_rows=0) :
     time = []
@@ -331,23 +343,17 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
         ax[0, 0].plot(ell[:, 0], ell[:, k], linestyle='--', linewidth=2, label = str(k))
     mean = np.nanmean(ell[:, 1:], axis=1)
     ax[0, 0].plot(ell[1:-1, 0], mean[1:-1], color = 'k')
-    #ax[0, 0].legend()
     ax[0, 0].grid()
-    #ax[0, 0].set_xlabel('Time [s]')
-    #ax[0, 0].set_xlim(tmin, tmax)
-
-    #ax[0, 0].set_ylim(Lmin, Lmax)
-
+    
     # Nions
     ax[0, 1].set_title(r'$N_{ions}$', fontsize=15)
     for k in range(1, len(nions[0])) :
         ax[0, 1].plot(nions[:, 0], nions[:, k], linewidth=2)
     
     ax[0, 1].grid()
-    #ax[0, 1].set_xlabel('Time [s]')
-    #ax[0, 1].set_xlim(tmin, tmax)
 
     mu = 0.6105653703843762
+    
     # AREAS
     ax[1, 0].set_title('Area', fontsize=15)
     for k in range(1, len(L[0])) :
@@ -359,8 +365,6 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
 
     ax[1, 0].grid()
     ax[1, 0].set_xlabel('Time [s]')
-    #ax[1, 0].set_xlim(tmin, tmax)
-
 
     # Concentration
     ax[1, 1].set_title('Concentrations', fontsize=15)
@@ -371,6 +375,46 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
     ax[1, 1].grid()
     ax[1, 1].set_xlabel('Time [s]')
     #ax[1, 1].set_xlim(tmin, tmax)
+    if savefig :
+        plt.savefig(savename, format='eps')
+    plt.show()
+    
+def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 4), x_logscale=False, y_logscale=False, show_meanlength = True) :
+    fig, ax = plt.subplots(1, 2, figsize=figsize)
+
+    tmin, tmax = 0., 0.4
+
+    if x_logscale :
+        ax[0].set_xscale('log')
+        ax[1].set_xscale('log')
+
+    if y_logscale :
+        ax[0].set_yscale('log')
+        ax[1].set_yscale('log')
+
+    # LENGTHS
+    ax[0].set_title(r'$\ell_{ij}$', fontsize=15)
+    for k in range(1, len(ell[0])) :
+        ax[0].plot(ell[:, 0], ell[:, k], linestyle='--', linewidth=2, label = str(k))
+    mean = np.nanmean(ell[:, 1:], axis=1)
+    ax[0].plot(ell[1:-1, 0], mean[1:-1], color = 'k')
+    ax[0].grid()
+    ax[0].set_xlabel('Time [s]')
+
+    mu = 0.6105653703843762
+    # AREAS
+    ax[1].set_title('Area', fontsize=15)
+    for k in range(1, len(L[0])) :
+        ax[1].plot(L[:, 0], L[:, k]**2 / mu)
+    
+    if show_totalarea :
+        t_a, A_tot = calc_A_tot(L)
+        ax[1].plot(t_a, A_tot, linestyle='--', linewidth=2, color='k')
+
+    ax[1].grid()
+    ax[1].set_xlabel('Time [s]')
+    #ax[1, 0].set_xlim(tmin, tmax)
+
     if savefig :
         plt.savefig(savename, format='eps')
     plt.show()

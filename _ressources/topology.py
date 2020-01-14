@@ -129,42 +129,18 @@ def merge_lumens(i, j, b_index, chain) :
     pos_b = lumens_dict[b].pos
     L_b = lumens_dict[b].length
         
-    # Merging lumens
-    pos_i, pos_j = lumens_dict[i].pos, lumens_dict[j].pos
-    L_i, L_j = lumens_dict[i].length, lumens_dict[j].length
-    mu = lumens_dict[i].mu
-    area_i, area_j = L_i**2 / mu, L_j**2 / mu
-    
+        
     # New lumen from merging
-    
     k = chain.nmax+1
     
     # Merging procedure
     if chain.lumen_type == 'hydraulic' :
-        area_k = area_i+area_j
-        L_k = np.sqrt(area_k * mu)
-        pos_k = (pos_i*area_i + pos_j*area_j) / area_k
-        lumens_dict[k] = lc.Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=chain.theta)
+        pos_k, L_k = chain.__merge__(k, i, j)
         
-    elif chain.lumen_type == 'hydroosmotic' :
-        area_k = area_i+area_j
-        L_k = np.sqrt(area_k * mu)
-        pos_k = (pos_i*area_i + pos_j*area_j) / area_k
-        nb_ions_k = lumens_dict[i].nb_ions + lumens_dict[j].nb_ions
-        eps_k = 0.5*(lumens_dict[i].eps + lumens_dict[j].eps)
-        ca_k = 0.5*(lumens_dict[i].ca + lumens_dict[j].ca)
-        #print('Fusion...')
-        #print('indices :', i, j, k)
-        #print('lengths : ', L_i, L_j, L_k)
-        #print('areas   : ', area_i, area_j, area_k)
-        #print('n_ions  : ', lumens_dict[i].nb_ions, lumens_dict[j].nb_ions, nb_ions_k)
-        #print('pos     : ', pos_i, pos_j, pos_k)
-        
-        lumens_dict[k] = lc.Osmotic_Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=chain.theta, init_nb_ions=nb_ions_k, eps=eps_k, ca=ca_k)
+    elif chain.lumen_type == 'hydroosmotic' :        
+        pos_k, L_k = chain.__merge__(k, i, j)
         
     # plus others...
-    
-    # New lumen
     
     # New bridges
     bmax = max(bridges_dict.keys())
