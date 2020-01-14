@@ -337,12 +337,12 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
         ax[0,1].set_yscale('log')
         ax[1,1].set_yscale('log')
 
-    # LENGTHS
+    # INTERLUMENAL LENGTHS
     ax[0, 0].set_title(r'$\ell_{ij}$', fontsize=15)
     for k in range(1, len(ell[0])) :
-        ax[0, 0].plot(ell[:, 0], ell[:, k], linestyle='--', linewidth=2, label = str(k))
+        ax[0, 0].plot(ell[:, 0], ell[:, k], linestyle='-', linewidth=2, label = str(k))
     mean = np.nanmean(ell[:, 1:], axis=1)
-    ax[0, 0].plot(ell[1:-1, 0], mean[1:-1], color = 'k')
+    ax[0, 0].plot(ell[1:-1, 0], mean[1:-1], color = 'k', linestyle = '--')
     ax[0, 0].grid()
     
     # Nions
@@ -392,12 +392,12 @@ def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savena
         ax[0].set_yscale('log')
         ax[1].set_yscale('log')
 
-    # LENGTHS
+    # INTERLUMENAL LENGTHS
     ax[0].set_title(r'$\ell_{ij}$', fontsize=15)
     for k in range(1, len(ell[0])) :
-        ax[0].plot(ell[:, 0], ell[:, k], linestyle='--', linewidth=2, label = str(k))
+        ax[0].plot(ell[:, 0], ell[:, k], linestyle='-', linewidth=2, label = str(k))
     mean = np.nanmean(ell[:, 1:], axis=1)
-    ax[0].plot(ell[1:-1, 0], mean[1:-1], color = 'k')
+    ax[0].plot(ell[1:-1, 0], mean[1:-1], color = 'k', linestyle='--')
     ax[0].grid()
     ax[0].set_xlabel('Time [s]')
 

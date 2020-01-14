@@ -143,11 +143,11 @@ class Chain :
         for b in self.bridges_dict.keys() :
             self.rec_br[self.time][b] = [self.bridges_dict[b].length]
             
-    def __merge__(self, k, Lumen_i, Lumen_j) :
+    def __merge__(self, k, i, j) :
         """
-
+        
         """
-        print('Hydraulic')
+        # Lumen
         pos_i, pos_j = self.lumens_dict[i].pos, self.lumens_dict[j].pos
         L_i, L_j = self.lumens_dict[i].length, self.lumens_dict[j].length
         mu_i, mu_j = self.lumens_dict[i].mu, self.lumens_dict[j].mu
@@ -158,11 +158,9 @@ class Chain :
         L_k = np.sqrt(area_k * mu_k)
         pos_k = (pos_i*area_i + pos_j*area_j) / area_k
         
-        #nb_ions_k = self.lumens_dict[i].nb_ions + self.lumens_dict[j].nb_ions
-        #eps_k = 0.5*(self.lumens_dict[i].eps + self.lumens_dict[j].eps)
-        #ca_k = 0.5*(self.lumens_dict[i].ca + self.lumens_dict[j].ca)
+        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta)
         
-        self.lumens_dict[k] = OLumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta)
+        # Bridge
         
         return pos_k, L_k
         
@@ -490,7 +488,6 @@ class Osmotic_Chain(Chain):
         """
         
         """
-        print('Hydroosmotic')
         # Lumen
         pos_i, pos_j = self.lumens_dict[i].pos, self.lumens_dict[j].pos
         L_i, L_j = self.lumens_dict[i].length, self.lumens_dict[j].length

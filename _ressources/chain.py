@@ -659,7 +659,7 @@ def main(configname, args) :
         f.close()
         
     # Move the config file into the directory
-    os.rename(configname, os.path.join(dir_name, configname))
+    #os.rename(configname, os.path.join(dir_name, configname))
     
     return ;
     
