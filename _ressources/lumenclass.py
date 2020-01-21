@@ -39,14 +39,14 @@ class Chain :
         self.rec = {} 
         self.rec_br = {}
         
-    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, ca_lumen_list=[], ca_bridge_list=[]) :
+    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, kappa=1., ca_lumen_list=[], ca_bridge_list=[]) :
         lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
         for b in range(len(bridges)) :
             self.bridges_dict[int(bridges[b, 0])] = Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3])
         
         for m in range(self.nb_lumens+2) :
-            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta)
+            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, eps=eps, kappa=kappa)
                     
         self.nmax = max(self.lumens_dict.keys())
         
@@ -112,7 +112,7 @@ class Chain :
         net.calc_ell_list(self)
         self.total_length = 2*np.sum(lumens[:, 2]) + np.sum(bridges[:, 3])
         
-        if abs(self.lumens_dict[-1].pos - self.total_length) > 1e-3 :
+        if abs(self.lumens_dict[-1].pos - self.total_length) > eps :
             print('The right border position ('+str(self.lumens_dict[-1].pos)+') does not correspond to total length ('+str(self.total_length)+')')
         
     def __give_positions__(self) :
@@ -151,14 +151,18 @@ class Chain :
         pos_i, pos_j = self.lumens_dict[i].pos, self.lumens_dict[j].pos
         L_i, L_j = self.lumens_dict[i].length, self.lumens_dict[j].length
         mu_i, mu_j = self.lumens_dict[i].mu, self.lumens_dict[j].mu
-        mu_k = 0.5*(mu_i + mu_j)
         area_i, area_j = L_i**2 / mu_i, L_j**2 / mu_j
+        eps_i, eps_j = self.lumens_dict[i].eps, self.lumens_dict[j].eps
+        kappa_i, kappa_j = self.lumens_dict[i].kappa, self.lumens_dict[j].kappa
         
+        mu_k = 0.5*(mu_i + mu_j)
         area_k = area_i+area_j
         L_k = np.sqrt(area_k * mu_k)
         pos_k = (pos_i*area_i + pos_j*area_j) / area_k
+        eps_k = 0.5*(eps_i + eps_j)
+        kappa_k = 0.5*(kappa_i + kappa_j)
         
-        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta)
+        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, eps=eps_k, kappa=kappa_k)
         
         # Bridge
         
@@ -204,17 +208,17 @@ class Chain :
     def __L_vec__(self) :
         L_vec = {}
         for j in self.lumens_dict.keys() :
-            L_vec[j] = self.lumens_dict[j].length
+            L_vec[j] = float(self.lumens_dict[j].length)
         return L_vec
         
     def __ell_vec__(self) :
         ell_vec = {}
         for b in self.bridges_dict.keys() :
-            ell_vec[b] = self.bridges_dict[b].length
+            ell_vec[b] = float(self.bridges_dict[b].length)
         return ell_vec
         
 class Lumen :
-    def __init__(self, index, init_pos, init_length, theta) :
+    def __init__(self, index, init_pos, init_length, theta, eps, kappa) :
         self.index = index
         self.init_pos = init_pos
         self.init_length = init_length
@@ -223,12 +227,15 @@ class Lumen :
         self.length = self.init_length
         self.pos = self.init_pos
         
-        self.length_list = [init_length]
-        self.pos_list = [init_pos]
+        self.eps = eps
         
         self.__calc_geom_mu__()
         self.__calc_geom_nu__()
         self.__calc_area__()
+        
+        #self.phi = 0.5*kappa*self.mu / L0**2
+        self.kappa = kappa
+        self.phi = 0.5*self.kappa*self.mu
         
     def __update__(self) :
         self.__calc_area__()
@@ -262,7 +269,7 @@ class Lumen :
         return "Lumen {0} is at position {1:.3f} with length {2:.3f}".format(self.index, self.pos, self.length)
     
     def __copy__(self) :
-        return Lumen(self.index, self.init_pos, self.init_length, self.theta)
+        return Lumen(self.index, self.init_pos, self.init_length, self.theta, self.eps, self.kappa)
         
 class Bridge :
     def __init__(self, index, lumen1, lumen2, length) :
@@ -457,19 +464,19 @@ class Osmotic_Chain(Chain):
     def __L_vec__(self) :
         L_vec = {}
         for j in self.lumens_dict.keys() :
-            L_vec[j] = self.lumens_dict[j].length
+            L_vec[j] = float(self.lumens_dict[j].length)
         return L_vec
         
     def __N_vec__(self) :
         N_vec = {}
         for j in self.lumens_dict.keys() :
-            N_vec[j] = self.lumens_dict[j].nb_ions
+            N_vec[j] = float(self.lumens_dict[j].nb_ions)
         return N_vec
         
     def __ell_vec__(self) :
         ell_vec = {}
         for b in self.bridges_dict.keys() :
-            ell_vec[b] = self.bridges_dict[b].length
+            ell_vec[b] = float(self.bridges_dict[b].length)
         return ell_vec
     
     def __calc_ell_avg__(self) :
@@ -512,10 +519,10 @@ class Osmotic_Chain(Chain):
         
 class Osmotic_Lumen(Lumen) :
     def __init__(self, index, init_pos, init_length, init_nb_ions, theta, eps, ca) :
-        Lumen.__init__(self, index, init_pos, init_length, theta)
+        Lumen.__init__(self, index, init_pos, init_length, theta, eps)
         self.init_nb_ions = init_nb_ions
         self.nb_ions = init_nb_ions
-        self.eps = eps
+        #self.eps = eps
         self.ca = ca
         
     def __calc_dconcentration__(self) :

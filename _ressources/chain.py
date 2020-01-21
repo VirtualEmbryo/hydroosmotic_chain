@@ -20,6 +20,7 @@ python3 chain.py config.conf [options]
 
 """
 import os, sys
+import time
 
 module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 
@@ -51,6 +52,8 @@ except :
     MATPLOTLIB_BOOL = False
     pass        
 
+pow_law = 3.
+
 # ========================================================================
 # ========================= LOAD CONFIG ==================================
 # ========================================================================
@@ -64,7 +67,7 @@ def load_config(filename) :
     path = config['sim']['path']
     
     lumen_type = config['sim']['chain_type']
-    
+        
     # Import pre-written configuration if specified
     if len(path) > 0 :
         print('Import config from ' + path)      
@@ -74,10 +77,19 @@ def load_config(filename) :
         if lumen_type == 'hydroosmotic' :
             my_chain = lc.Osmotic_Chain(nb_lumens = len(lumens_array)-2, e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
             my_chain.__import_config__(lumens_array, bridges_array, eps = float(config['topology']['eps']))
+            
+            chis = float(config['hydroosmotic']['chis'])
+            chiv = float(config['hydroosmotic']['chiv'])
+            my_chain.taus = float(config['hydroosmotic']['taus'])
+            my_chain.tauv = float(config['hydroosmotic']['tauv'])
         
         elif lumen_type == 'hydraulic' :
             my_chain = lc.Chain(nb_lumens = len(lumens_array)-2, e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
-            my_chain.__import_config__(lumens_array, bridges_array, eps = float(config['topology']['eps']))
+            my_chain.__import_config__(lumens_array, bridges_array, eps = float(config['topology']['eps']), kappa=float(config['topology']['kappa']))
+            
+            my_chain.tau = float(config['hydraulic']['tau'])
+            my_chain.kappa = float(config['hydraulic']['kappa'])
+            my_chain.gamma = float(config['hydraulic']['gamma'])
             
         my_chain.pumping = config['pumping']['pattern']
         
@@ -94,9 +106,18 @@ def load_config(filename) :
             nions_avg = float(config['hydroosmotic']['nions_avg'])
             nions_std = float(config['hydroosmotic']['nions_std'])
             
+            chis = float(config['hydroosmotic']['chis'])
+            chiv = float(config['hydroosmotic']['chiv'])
+            my_chain.taus = float(config['hydroosmotic']['taus'])
+            my_chain.tauv = float(config['hydroosmotic']['tauv'])
+            
         elif lumen_type == 'hydraulic' :
             my_chain = lc.Chain(nb_lumens = int(config['sim']['nlumens']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
-                    
+            
+            my_chain.tau = float(config['hydraulic']['tau'])
+            my_chain.kappa = float(config['hydraulic']['kappa'])
+            my_chain.gamma = float(config['hydraulic']['gamma'])
+            
         # Pumping
         if conf.has_option('pumping', 'pattern') : 
             my_chain.pumping = config['pumping']['pattern']
@@ -139,22 +160,12 @@ def load_config(filename) :
             my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), eps = float(config['topology']['eps']), ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
     
     if lumen_type == 'hydroosmotic' :
-        chis = float(config['hydroosmotic']['chis'])
-        chiv = float(config['hydroosmotic']['chiv'])
-    
         my_chain.xis = chis*my_chain.bridges_dict[1].length
         my_chain.xiv = chiv*my_chain.bridges_dict[1].length
         
         #my_chain.xis = chis*my_chain.total_length
         #my_chain.xiv = chiv*my_chain.total_length
         
-        my_chain.taus = float(config['hydroosmotic']['taus'])
-        my_chain.tauv = float(config['hydroosmotic']['tauv'])
-
-    elif lumen_type == 'hydraulic' :
-        my_chain.tau = float(config['hydraulic']['tau'])
-        my_chain.kappa = float(config['hydraulic']['kappa'])
-        my_chain.gamma = float(config['hydraulic']['gamma'])
     #print(my_chain)
     return config, my_chain
 
@@ -162,25 +173,25 @@ def load_config(filename) :
 # ======================== Runge-Kutta ===================================
 # ========================================================================
 
-def calc_new_timestep(error, tolerance, secure=0.9, cst_tstep=1) :
+def calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=0) :
 
     if cst_tstep :
-        return 1.
+        return h
     else :
         if error == 0. :
             #print('Error !', error)
             return 1.
         else :
             if error > tolerance :
-                #s = secure*(tolerance / error)**(0.2)
-                ratio = (tolerance / (2.*error))**0.5
-                s = secure*min(2., max(0.3, ratio))
+                s = secure*(tolerance / error)**(0.2)
+                #ratio = (tolerance / (2.*error))**0.5
+                #s = secure*min(2., max(0.3, ratio))
             else :
-                #s = secure*(tolerance / error)**(0.25)
-                ratio = (tolerance / (2.*error))**0.5
-                s = secure*min(2., max(0.3, ratio))
+                s = secure*(tolerance / error)**(0.25)
+                #ratio = (tolerance / (2.*error))**0.5
+                #s = secure*min(2., max(0.3, ratio))
         #print(s)
-        return s
+        return h*s
 
 def calc_K_i(T, h, L, ell, chain, K_list=[], coeff_list=[]) :
     """
@@ -189,18 +200,20 @@ def calc_K_i(T, h, L, ell, chain, K_list=[], coeff_list=[]) :
     K_list = (K1, K2, ..., K_{X-1})
     """
     K = {}
+    # corresponds to k1
     if len(K_list) == 0 and len(coeff_list) == 0 :
-        # corresponds to k1
         for j in chain.lumens_dict.keys() :
             if j != 0 and j != -1 :
                 K[j] = h*flux.func_Lj_hydraulic(j, T, L, ell, chain)
+                #K[j] = flux.func_Lj_hydraulic(j, T, L, ell, chain)     ## test
             else :
                 K[j] = 0.
+    
+    # corresponds to k2, k3, ...
     else :
         if len(coeff_list) != len(K_list) :
             print('ERROR ! Note the same lengths of coefficient or K vectors !')
             
-        # corresponds to k2, k3, ...
         new_L, new_ell = {}, {}
         
         for j in chain.lumens_dict.keys() :
@@ -218,6 +231,7 @@ def calc_K_i(T, h, L, ell, chain, K_list=[], coeff_list=[]) :
         for j in chain.lumens_dict.keys() :
             if j != 0 and j != -1 :
                 K[j] = h*flux.func_Lj_hydraulic(j, T, new_L, new_ell, chain)
+                #K[j] = flux.func_Lj_hydraulic(j, T, new_L, new_ell, chain)     ##test
             else :
                 K[j] = 0.
     return K
@@ -283,31 +297,54 @@ def test_DeltaK(L_vec, Ky) :
         
     return repeat, index_list
         
-def rk45_step(t0, chain, h) :
-
+def rk45_step(t0, chain, h, alpha) :
+    global pow_law
+    cp_chain = chain.__copy__()
+    
     L_vec, ell_vec = chain.__L_vec__(), chain.__ell_vec__()
     if chain.lumen_type == 'hydroosmotic' :
         N_vec = chain.__N_vec__()
         
     repeat = True
     while repeat :
-        ### RK4 - Step 1
-        K1, Q1 = calc_KQ_i(t0, h, L_vec, N_vec, ell_vec, chain)
+        if chain.lumen_type == 'hydroosmotic' :
+            ### RK4 - Step 1
+            K1, Q1 = calc_KQ_i(t0, h, L_vec, N_vec, ell_vec, chain)
 
-        ### RK4 - STEP 2
-        K2, Q2 = calc_KQ_i(t0+0.5*h, h, L_vec, N_vec, ell_vec, chain, K_list=[K1], Q_list=[Q1], coeff_list=[0.5])
+            ### RK4 - STEP 2
+            K2, Q2 = calc_KQ_i(t0+0.5*h, h, L_vec, N_vec, ell_vec, chain, K_list=[K1], Q_list=[Q1], coeff_list=[0.5])
     
-        ### RK4 - STEP 3
-        K3, Q3 = calc_KQ_i(t0+0.5*h, h, L_vec, N_vec, ell_vec, chain, K_list=[K2], Q_list=[Q2], coeff_list=[0.5])
+            ### RK4 - STEP 3
+            K3, Q3 = calc_KQ_i(t0+0.5*h, h, L_vec, N_vec, ell_vec, chain, K_list=[K2], Q_list=[Q2], coeff_list=[0.5])
     
-        ### RK4 - STEP 4
-        K4, Q4 = calc_KQ_i(t0+h, h, L_vec, N_vec, ell_vec, chain, K_list=[K3], Q_list=[Q3], coeff_list=[1.])
+            ### RK4 - STEP 4
+            K4, Q4 = calc_KQ_i(t0+h, h, L_vec, N_vec, ell_vec, chain, K_list=[K3], Q_list=[Q3], coeff_list=[1.])
     
     
-        ### FINAL
-        K = {j: (K1[j]+2.*K2[j]+2.*K3[j]+K4[j])/6. for j in chain.lumens_dict.keys()}
-        Q = {j: (Q1[j]+2.*Q2[j]+2.*Q3[j]+Q4[j])/6. for j in chain.lumens_dict.keys()}
+            ### FINAL
+            K = {j: (K1[j]+2.*K2[j]+2.*K3[j]+K4[j])/6. for j in chain.lumens_dict.keys()}
+            Q = {j: (Q1[j]+2.*Q2[j]+2.*Q3[j]+Q4[j])/6. for j in chain.lumens_dict.keys()}
         
+        elif chain.lumen_type == 'hydraulic' :
+            ### RK4 - Step 1
+
+            K1 = calc_K_i(t0, h, L_vec, ell_vec, chain)
+
+            ### RK4 - STEP 2
+            K2 = calc_K_i(t0+0.5*h, h, L_vec, ell_vec, chain, K_list=[K1], coeff_list=[0.5])
+    
+            ### RK4 - STEP 3
+            K3 = calc_K_i(t0+0.5*h, h, L_vec, ell_vec, chain, K_list=[K2], coeff_list=[0.5])
+    
+            ### RK4 - STEP 4
+            K4 = calc_K_i(t0+h, h, L_vec, ell_vec, chain, K_list=[K3], coeff_list=[1.])
+    
+    
+            ### FINAL
+            K = {j: (K1[j]+2.*K2[j]+2.*K3[j]+K4[j])/6. for j in chain.lumens_dict.keys()}
+            if chain.lumen_type == 'hydroosmotic' :
+                Q = {j: (Q1[j]+2.*Q2[j]+2.*Q3[j]+Q4[j])/6. for j in chain.lumens_dict.keys()}
+            
         ### Test if configuration is allowed
         repeat, index = test_DeltaK(L_vec, K)
         count = 0
@@ -321,20 +358,25 @@ def rk45_step(t0, chain, h) :
     
     
     # UPDATE CHAIN
-    chain.time = t0+h
     for j in chain.lumens_dict.keys() :
         chain.lumens_dict[j].length  += K[j]
-        chain.lumens_dict[j].nb_ions += Q[j]
+        if chain.lumen_type == 'hydroosmotic' :
+            chain.lumens_dict[j].nb_ions += Q[j]
     
     net.calc_ell_list(chain)
+    new_time_step = alpha/(len(chain.lumens_dict.keys()) -2.)**(pow_law)
+    
+    return new_time_step
 
 def rkf45_step(t0, chain, h, tolerance = 1e-6) :
-    cp_chain = chain.__copy__()
     
+    cp_chain = chain.__copy__()
+        
     L_vec, ell_vec = chain.__L_vec__(), chain.__ell_vec__()
+    
     if chain.lumen_type == 'hydroosmotic' :
         N_vec = chain.__N_vec__()
-
+    
     repeat = True
     
     count = 0
@@ -400,10 +442,8 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
     
             ### FINAL
             Ky = {j: (25./216)*K1[j] + (1408./2565)*K3[j] + (2197./4104)*K4[j] -(1./5)*K5[j] for j in chain.lumens_dict.keys()}
-            #Qy = {j: (25./216)*Q1[j] + (1408./2565)*Q3[j] + (2197./4104)*Q4[j] -(1./5)*Q5[j] for j in chain.lumens_dict.keys()}
     
             Kz = {j: (16./135)*K1[j] + (6656./12825)*K3[j] + (28561./56430)*K4[j] - (9./50)*K5[j] + (2./55)*K6[j] for j in chain.lumens_dict.keys()}
-            #Qz = {j: (16./135)*Q1[j] + (6656./12825)*Q3[j] + (28561./56430)*Q4[j] - (9./50)*Q5[j] + (2./55)*Q6[j] for j in chain.lumens_dict.keys()}
 
             ### Test if configuration is allowed
             repeat, index = test_DeltaK(L_vec, Kz)
@@ -416,7 +456,6 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
         if count >= 10 : print('More than 10 trials without convergence. There might be a problem.')
     
     # UPDATE CHAIN
-    chain.time = t0+h
     for j in chain.lumens_dict.keys() :
         chain.lumens_dict[j].length  += Kz[j]
         
@@ -429,7 +468,8 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
         error_list += [abs(Ky[j]-Kz[j])]
     error = max(error_list)
         
-    new_time_step = h*calc_new_timestep(error, tolerance, secure=0.9, cst_tstep=0)
+    new_time_step = calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=False)
+    #new_time_step = h#*calc_new_timestep(error, tolerance, secure=0.9, cst_tstep=0)     # MOD
     #print(new_time_step)
     return new_time_step
     
@@ -437,19 +477,16 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
 # ========================= SIMULATION ===================================
 # ========================================================================
 
-def system(chain, h=1e-2, recording = False, method = 'rk45', tolerance=1e-10) :
+def system(chain, h=1e-2, recording = False, method = 'rk45', tolerance=1e-10, alpha=1e-2) :
     stop = False
     t0 = chain.time
-    
     if method == 'rk45' :
-        rk45_step(t0, chain, h)
-        #print('rk45')
+        new_tstep = rk45_step(t0, chain, h, alpha=alpha)
     elif method == 'rkf45' :
         new_tstep = rkf45_step(t0, chain, h, tolerance=tolerance)
-
     else :
         print('Method not recognized')
-        
+    
     stop_cause = ''
     
     #if len(tplg.check_emptylumens(chain)) > 0 or len(tplg.check_merginglumens(chain)) > 0 or len(tplg.empty_ions(chain)) > 0:
@@ -477,9 +514,9 @@ def system(chain, h=1e-2, recording = False, method = 'rk45', tolerance=1e-10) :
         
     if recording :
         chain.__record_state__()
-    
+
     if method == 'rk45' :
-        return stop, stop_cause, h
+        return stop, stop_cause, new_tstep 
     elif method == 'rkf45' :
         return stop, stop_cause, new_tstep
 
@@ -525,9 +562,13 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     #try :
         for i in range(max_step) :
             step += 1
-                        
             # make a step
-            stop, stop_cause, h = system(chain, h=h, recording = recording, method = solver, tolerance=1e-10)
+
+            stop, stop_cause, h = system(chain, h=h, recording = recording, method = solver, tolerance=1e-10, alpha=alpha)
+            
+            chain.time += h
+            
+            # chech topology
             tplg.topology(chain)
     
             # Save the number of lumens
@@ -539,7 +580,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             
             if stop == 1 :
                 if stop_cause == 'end_simul':
-                    # One lumen left : returns 2 ; otherwise return 1
+                    # One lumen left : return 2 ; otherwise return 1
                     if len(chain.lumens_dict) - 2 == 1 :
                         end = 2
                         print('End simulation : 1 Lumen left')
@@ -548,7 +589,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                             if k != 0 and k != -1 :
                                 my_chain.winner = k
                         
-                        #chain.events += 'Time : ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(winner))
+                        chain.events += 'Time : ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(my_chain.winner))
                     elif len(chain.lumens_dict) - 2 == 0 :
                         end = 1
                         print('End simulation : 0 Lumen left')
@@ -657,10 +698,10 @@ def main(configname, args) :
         f.write('========= END =========\n')
         f.write('Winner : ' + str(int(my_chain.winner)))
         f.close()
-        
     # Move the config file into the directory
     #os.rename(configname, os.path.join(dir_name, configname))
-    
+    #Save the final configuration - if not finished, allows to restart a configuration.
+    my_chain.__save__(os.path.join(dir_name, 'end_chain.dat'))
     return ;
     
 if __name__ == '__main__' :

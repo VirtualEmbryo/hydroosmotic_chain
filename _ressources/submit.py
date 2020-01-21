@@ -40,12 +40,13 @@ subcmd = 'sbatch'
 queue = 'debug'
 runtime = '1-0:00'
 cpu_per_task = 1
+nodelist = ''
 
 folder_path = '/share/mathieu.leverge/git/chain_lumen/_ressources/'
 script = '~/git/chain_lumen/_ressources/chain.py'
 confname = 'config.conf'
 
-def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task) :
+def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, nodelist='') :
     nconfig=len(directories)
     filename='sim.sh'
     f = open(filename, 'w')
@@ -53,8 +54,11 @@ def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_ta
     f.write('#SBATCH --job-name=chain\n')
     f.write('#SBATCH --ntasks=1\n')
     f.write('#SBATCH --nodes=1\n')
-    f.write('#SBATCH --cpus-per-task=1'+ str(cpu_per_task) +'\n')
-    f.write('#SBATCH --partition=' + queue + '\n')
+    f.write('#SBATCH --cpus-per-task='+ str(cpu_per_task) +'\n')
+    if len(nodelist) > 0 :
+        f.write('#SBATCH --nodelist=' + nodelist + '\n')
+    else :
+        f.write('#SBATCH --partition=' + queue + '\n')
     f.write('#SBATCH --time='+runtime+'\n')
     f.write('#SBATCH --mem=512\n')
     f.write('#SBATCH --signal=INT@60\n')
@@ -65,7 +69,7 @@ def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_ta
     
     f.write('export OPENBLAS_NUM_THREADS=1\n')
     
-    f.write('./job$SLURM_ARRAY_TASK_ID')
+    f.write('./job$SLURM_ARRAY_TASK_ID\n')
     f.close()
 
     os.chmod(filename, 0700)
@@ -83,7 +87,7 @@ def write_s(confname, script, dirconfig, n) :
     return 0
 
 def main(args):
-    global subcmd, queue, runtime, cpu_per_task, script, confname
+    global subcmd, queue, runtime, cpu_per_task, script, confname, nodelist
     list_dir = []
 
     for arg in args :
@@ -102,7 +106,9 @@ def main(args):
                 cpu_per_task = 1
             elif cpu_per_task > 1 :
                 print(str(cpu_per_task) + 'assigned for one task.')
-        
+
+        elif arg.startswith('nodelist=') :
+            nodelist = arg[len('nodelist='):]
         else :
             list_dir += [arg]
 
@@ -114,7 +120,7 @@ def main(args):
     except : pass
     
     nconfig = len(list_dir)
-    f = write_gen(list_dir, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task)
+    f = write_gen(list_dir, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, nodelist=nodelist)
     n = 1
     
     for dirconfig in list_dir :

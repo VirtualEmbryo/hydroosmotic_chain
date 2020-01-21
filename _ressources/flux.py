@@ -120,7 +120,7 @@ def func_Lj_hydraulic(index, t, L_vec, ell_vec, chain) :
     # CALCULATE THE FLUXES
     i, k = net.leftright_neighbors(index, chain)
     
-    Jjh_left = func_JLh(i_left = i, i_right = index, L_vec = L_vec, ell_vec = ell_vec, chain = chain)
+    Jjh_left  = func_JLh(i_left = i, i_right = index, L_vec = L_vec, ell_vec = ell_vec, chain = chain)
     Jjh_right = func_JRh(i_left = index, i_right = k, L_vec = L_vec, ell_vec = ell_vec, chain = chain)
     
     Jjh = Jjh_left + Jjh_right
@@ -134,6 +134,9 @@ def func_JLh(i_left, i_right, L_vec, ell_vec, chain) :
     b = net.find_bridge(i_left, i_right, chain) # index of the connecting bridge
     
     ellt = ell_vec[b]
+    #ellt = np.abs(chain.lumens_dict[i_left].pos - chain.lumens_dict[i_right].pos)
+    #print(i_left, i_right, ellt)
+    
     L_L, L_R = L_vec[i_left], L_vec[i_right]
     L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
@@ -141,12 +144,17 @@ def func_JLh(i_left, i_right, L_vec, ell_vec, chain) :
     
     mu_R  = chain.lumens_dict[i_right].mu
     
-    phi_R = 0.5*chain.kappa*mu_R / L0**2
-    rho_L = chain.gamma * np.sin(chain.theta) / L0
-    rho_R = chain.gamma * np.sin(chain.theta) / L0
+    phi_R = chain.lumens_dict[i_right].phi #0.5*chain.kappa*mu_R #/ L0**2
+    
+    #rho_L = chain.gamma * np.sin(chain.theta) #/ L0
+    #rho_R = chain.gamma * np.sin(chain.theta) #/ L0    
+    rho_L = chain.lumens_dict[i_left].eps
+    rho_R = chain.lumens_dict[i_right].eps
+    
     #ca_LR = chain.bridges_dict[b].ca    
     
     return phi_R / (ellt*L_R)*(rho_L/L_L - rho_R / L_R)
+    #return phi_R / (ellt*L_R**2)*(rho_L/L_L - rho_R / L_R)
     
 def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
@@ -155,6 +163,9 @@ def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     b = net.find_bridge(i_left, i_right, chain) # index of the connecting bridge
     
     ellt = ell_vec[b]
+    #ellt = np.abs(chain.lumens_dict[i_left].pos - chain.lumens_dict[i_right].pos)
+    #print(i_left, i_right, ellt)
+    
     L_L, L_R = L_vec[i_left], L_vec[i_right]
     L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
@@ -162,12 +173,15 @@ def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     
     mu_L  = chain.lumens_dict[i_left].mu
     
-    phi_L = 0.5*chain.kappa*mu_L / L0**2
-    rho_L = chain.gamma * np.sin(chain.theta) / L0
-    rho_R = chain.gamma * np.sin(chain.theta) / L0
+    phi_L = chain.lumens_dict[i_left].phi #0.5*chain.kappa*mu_L #/ L0**2
+    
+    rho_L = chain.lumens_dict[i_left].eps
+    rho_R = chain.lumens_dict[i_right].eps
+    
     #ca_LR = chain.bridges_dict[b].ca    
     
     return phi_L / (ellt*L_L)*(rho_R/L_R - rho_L / L_L)
+    #return phi_L / (ellt*L_L**2)*(rho_R/L_R - rho_L / L_L)
 
 # ========================================================================
 # ===================== Osmotic Hydraulic ================================

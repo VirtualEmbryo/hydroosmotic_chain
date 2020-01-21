@@ -379,7 +379,7 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
         plt.savefig(savename, format='eps')
     plt.show()
     
-def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 4), x_logscale=False, y_logscale=False, show_meanlength = True) :
+def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 4), x_logscale=False, y_logscale=False, show_meanlength = True, xlim=[]) :
     fig, ax = plt.subplots(1, 2, figsize=figsize)
 
     tmin, tmax = 0., 0.4
@@ -400,7 +400,9 @@ def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savena
     ax[0].plot(ell[1:-1, 0], mean[1:-1], color = 'k', linestyle='--')
     ax[0].grid()
     ax[0].set_xlabel('Time [s]')
-
+    if len(xlim) > 0 :
+        ax[0].set_xlim(xlim[0], xlim[1])
+        
     mu = 0.6105653703843762
     # AREAS
     ax[1].set_title('Area', fontsize=15)
@@ -413,7 +415,8 @@ def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savena
 
     ax[1].grid()
     ax[1].set_xlabel('Time [s]')
-    #ax[1, 0].set_xlim(tmin, tmax)
+    if len(xlim) > 0 :
+        ax[1].set_xlim(xlim[0], xlim[1])
 
     if savefig :
         plt.savefig(savename, format='eps')
