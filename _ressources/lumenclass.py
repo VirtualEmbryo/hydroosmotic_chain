@@ -39,14 +39,14 @@ class Chain :
         self.rec = {} 
         self.rec_br = {}
         
-    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, kappa=1., ca_lumen_list=[], ca_bridge_list=[]) :
+    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, gamma = 1., kappa=1., ca_lumen_list=[], ca_bridge_list=[]) :
         lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
         for b in range(len(bridges)) :
             self.bridges_dict[int(bridges[b, 0])] = Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3])
         
         for m in range(self.nb_lumens+2) :
-            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, eps=eps, kappa=kappa)
+            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, gamma=gamma, kappa=kappa)
                     
         self.nmax = max(self.lumens_dict.keys())
         
@@ -68,8 +68,8 @@ class Chain :
         print('Current Time : '+str(self.time))
         print('======= PARAMETERS =======')
         print('tau : '+str(self.tau))
-        print('kappa : '+str(self.kappa))
-        print('gammma : '+str(self.gamma))
+        #print('kappa : '+str(self.kappa))
+        #print('gammma : '+str(self.gamma))
         print('======= LUMENS =======')
         print('Nb lumens : '+str(self.nb_lumens))
         for k in list(self.lumens_dict.keys()) :
@@ -94,9 +94,9 @@ class Chain :
         cp_chain.rec_br = self.rec_br
         cp_chain.nmax = self.nmax
         cp_chain.events = self.events
-        cp_chain.kappa = self.kappa
         cp_chain.tau = self.tau
-        cp_chain.gamma = self.gamma
+        #cp_chain.gamma = self.gamma
+        #cp_chain.kappa = self.kappa
         
         return cp_chain
         
@@ -218,16 +218,15 @@ class Chain :
         return ell_vec
         
 class Lumen :
-    def __init__(self, index, init_pos, init_length, theta, eps, kappa) :
+    def __init__(self, index, init_pos, init_length, theta, gamma, kappa) :
         self.index = index
         self.init_pos = init_pos
-        self.init_length = init_length
         self.theta = theta
         
-        self.length = self.init_length
+        self.length = init_length
         self.pos = self.init_pos
         
-        self.eps = eps
+        self.gamma = gamma
         
         self.__calc_geom_mu__()
         self.__calc_geom_nu__()
@@ -269,7 +268,7 @@ class Lumen :
         return "Lumen {0} is at position {1:.3f} with length {2:.3f}".format(self.index, self.pos, self.length)
     
     def __copy__(self) :
-        return Lumen(self.index, self.init_pos, self.init_length, self.theta, self.eps, self.kappa)
+        return Lumen(self.index, self.init_pos, self.length, self.theta, self.gamma, self.kappa)
         
 class Bridge :
     def __init__(self, index, lumen1, lumen2, length) :
@@ -391,6 +390,10 @@ class Osmotic_Chain(Chain):
         cp_chain.rec_br = self.rec_br
         cp_chain.nmax = self.nmax
         cp_chain.events = self.events
+        
+        cp_chain.pumping = self.pumping
+        #if cp_chain.pumping != None :
+               #then copy...
         
         cp_chain.taus = self.taus
         cp_chain.tauv = self.tauv
@@ -519,10 +522,27 @@ class Osmotic_Chain(Chain):
         
 class Osmotic_Lumen(Lumen) :
     def __init__(self, index, init_pos, init_length, init_nb_ions, theta, eps, ca) :
-        Lumen.__init__(self, index, init_pos, init_length, theta, eps)
+        #Lumen.__init__(self, index, init_pos, init_length, theta, eps)
+        self.index = index
+        self.init_pos = init_pos
+        self.theta = theta
+        
+        self.length = init_length
+        self.pos = init_pos
+        
+        #self.gamma = gamma
+        
+        self.__calc_geom_mu__()
+        self.__calc_geom_nu__()
+        self.__calc_area__()
+        
+        #self.phi = 0.5*kappa*self.mu / L0**2
+        #self.kappa = kappa
+        #self.phi = 0.5*self.kappa*self.mu
+        
         self.init_nb_ions = init_nb_ions
         self.nb_ions = init_nb_ions
-        #self.eps = eps
+        self.eps = eps
         self.ca = ca
         
     def __calc_dconcentration__(self) :
@@ -533,7 +553,7 @@ class Osmotic_Lumen(Lumen) :
         return "Lumen {0} is at position {1:.3f} with length {2:.3f} and {3:.3f} ions with pumping {4:.3f}".format(self.index, self.pos, self.length, self.nb_ions, self.ca)
         
     def __copy__(self) :
-        return Osmotic_Lumen(self.index, self.init_pos, self.init_length, self.init_nb_ions, self.theta, self.eps, self.ca)
+        return Osmotic_Lumen(self.index, self.pos, self.length, self.nb_ions, self.theta, self.eps, self.ca)
 
     def __save__(self) :
         return "Lumen {0} is at position {1:.3f} with length {2:.3f} and {3:.3f} ions with pumping {4:.3f}".format(self.index, self.pos, self.length, self.nb_ions, self.ca)

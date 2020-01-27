@@ -115,8 +115,8 @@ def load_config(filename) :
             my_chain = lc.Chain(nb_lumens = int(config['sim']['nlumens']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
             
             my_chain.tau = float(config['hydraulic']['tau'])
-            my_chain.kappa = float(config['hydraulic']['kappa'])
-            my_chain.gamma = float(config['hydraulic']['gamma'])
+            #my_chain.kappa = float(config['hydraulic']['kappa'])
+            #my_chain.gamma = float(config['hydraulic']['gamma'])
             
         # Pumping
         if conf.has_option('pumping', 'pattern') : 
@@ -157,11 +157,19 @@ def load_config(filename) :
         if lumen_type == 'hydroosmotic' :
             my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), eps = float(config['topology']['eps']), equilibrium=equilibrium, nions_avg=nions_avg, nions_std=nions_std, ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
         elif lumen_type == 'hydraulic' :
-            my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), eps = float(config['topology']['eps']), ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
+            my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), gamma = float(config['hydraulic']['gamma']), ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list, kappa = float(config['hydraulic']['kappa']))
     
     if lumen_type == 'hydroosmotic' :
-        my_chain.xis = chis*my_chain.bridges_dict[1].length
-        my_chain.xiv = chiv*my_chain.bridges_dict[1].length
+        #my_chain.xis = chis*my_chain.bridges_dict[1].length
+        #my_chain.xiv = chiv*my_chain.bridges_dict[1].length
+        if 1 :
+            average_length_bridges = np.average([my_chain.bridges_dict[k].length for k in my_chain.bridges_dict.keys()])
+            my_chain.xis = chis*average_length_bridges
+            my_chain.xiv = chiv*average_length_bridges
+            
+        #else :
+        #    my_chain.xis = chis*float(config['topology']['avg_dist'])
+        #    my_chain.xiv = chiv*float(config['topology']['avg_dist'])
         
         #my_chain.xis = chis*my_chain.total_length
         #my_chain.xiv = chiv*my_chain.total_length
@@ -369,9 +377,8 @@ def rk45_step(t0, chain, h, alpha) :
     return new_time_step
 
 def rkf45_step(t0, chain, h, tolerance = 1e-6) :
-    
     cp_chain = chain.__copy__()
-        
+    
     L_vec, ell_vec = chain.__L_vec__(), chain.__ell_vec__()
     
     if chain.lumen_type == 'hydroosmotic' :
@@ -382,7 +389,6 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
     count = 0
     while repeat :
         if chain.lumen_type == 'hydroosmotic' :
-            #print('hydroosmotic')
             ### RK4 - Step 1
             K1, Q1 = calc_KQ_i(t0, h, L_vec, N_vec, ell_vec, chain)
 
@@ -412,7 +418,7 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
     
             Kz = {j: (16./135)*K1[j] + (6656./12825)*K3[j] + (28561./56430)*K4[j] - (9./50)*K5[j] + (2./55)*K6[j] for j in chain.lumens_dict.keys()}
             Qz = {j: (16./135)*Q1[j] + (6656./12825)*Q3[j] + (28561./56430)*Q4[j] - (9./50)*Q5[j] + (2./55)*Q6[j] for j in chain.lumens_dict.keys()}
-
+            
             ### Test if configuration is allowed
             repeat, index = test_DeltaK(L_vec, Kz)
         
@@ -458,14 +464,16 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
     # UPDATE CHAIN
     for j in chain.lumens_dict.keys() :
         chain.lumens_dict[j].length  += Kz[j]
+        if chain.lumen_type == 'hydroosmotic' :
+            chain.lumens_dict[j].nb_ions  += Qz[j]
         
     net.calc_ell_list(chain)
     
     # Update Time Step
     error_list = []
     for j in Ky.keys() :
-        #print(abs(Ky[j]-Kz[j]))
         error_list += [abs(Ky[j]-Kz[j])]
+        
     error = max(error_list)
         
     new_time_step = calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=False)

@@ -14,107 +14,9 @@ except :
     import network as net
     import topology
 
-def calc_fluxes(chain, threshold=0.5, flux_val=1e-2, viscosity=1e-3, e0=1e-2, kappa=1) :
-    fl = np.zeros(chain.nb_lumens)
-
-    if chain.lumen_type == 'standard' :
-        fl = standard_flux(chain.lumens_dict, threshold, flux_val)
-
-    elif chain.lumen_type == 'hydraulic' :
-        fl = hydraulic_flux(chain, kappa)
-        
-    elif chain.lumen_type == 'hydroosmotic' :
-        fl = hydroosmotic_flux(chain)
-               
-    else :
-        print('Flux is not valid')
-    
-    chain.fluxes = fl
-    return fl
-    
-# ========================================================================
-# ============================ Standard ==================================
-# ========================================================================
-
-def standard_flux(lumens_dict, threshold, flux_val) :
-    flux = {}
-    # NB : the output is LENGTH
-    for l in lumens_dict.keys() :
-        if l != 0 and l != -1 :
-            if lumens_dict[l].length >= threshold :
-                flux[l] = flux_val
-            else :
-                flux[l] = -flux_val
-        else :
-            flux[l] = 0.
-            
-    for b in bridges_dict.keys() :
-        flux[(bridges_dict[b].lumen1, bridges_dict[b].lumen2)] = -(flux[bridges_dict[b].lumen1] + flux[bridges_dict[b].lumen2])
-        
-    return flux
-
 # ========================================================================
 # ========================== Hydraulic ===================================
 # ========================================================================
-
-def hydraulic_flux2(chain, kappa) :
-    flux = {}
-    lumens_dict, bridges_dict = chain.lumens_dict, chain.bridges_dict
-    for j in lumens_dict.keys() :
-        
-        #phi_j = 0.5*kappa*lumens_dict[j].mu
-        
-        if j != 0 and j != -1 :
-            i, k = net.find_neighbors(j, bridges_dict)                   # indices of the connected lumens
-            br_ij, br_jk = net.connected_bridges(j, bridges_dict)        # indices of the connected bridges
-            
-            if i != 0 and i != -1 and k != 0 and k != -1 :
-                l_ij, l_jk = bridges_dict[br_ij].length, bridges_dict[br_jk].length
-                
-                L_i = lumens_dict[i].length
-                L_j = lumens_dict[j].length
-                L_k = lumens_dict[k].length
-                
-                rho_i = np.sin(lumens_dict[i].theta)*chain.gamma/chain.total_length
-                rho_j = np.sin(lumens_dict[j].theta)*chain.gamma/chain.total_length
-                rho_k = np.sin(lumens_dict[k].theta)*chain.gamma/chain.total_length
-
-                flux[j] = kappa/l_ij * (1./L_i-1./L_j) + kappa/l_jk * (1./L_k-1./L_j)
-                
-            elif (i==0 and k==-1) or (i==-1 and k==0) :
-                #print 'no connection'
-                flux[j] = 0.
-                
-            elif (i == 0 or i == -1) and (k!= 0 or k!= -1) :
-                #print i, k
-                #print('border left')
-                L_j = lumens_dict[j].length
-                L_k = lumens_dict[k].length
-                
-                l_jk = bridges_dict[br_jk].length
-                
-                rho_j = np.sin(lumens_dict[j].theta)*chain.gamma/chain.total_length
-                rho_k = np.sin(lumens_dict[k].theta)*chain.gamma/chain.total_length
-                
-                flux[j] = 1./l_jk * (1./L_k-1./L_j) * kappa
-                
-            elif (k == 0 or k == -1) and (i != 0 or i != -1) :
-                #print i, k
-                #print('border right')
-                L_i = lumens_dict[i].length
-                L_j = lumens_dict[j].length
-                l_ij = bridges_dict[br_ij].length
-                
-                rho_i = np.sin(lumens_dict[i].theta)*chain.gamma/chain.total_length
-                rho_j = np.sin(lumens_dict[j].theta)*chain.gamma/chain.total_length
-                
-                flux[j] = 1./l_ij * (1./L_i-1./L_j) * kappa
-        else :
-            flux[j] = 0.
-            
-    for b in bridges_dict.keys() :
-        flux[(bridges_dict[b].lumen1, bridges_dict[b].lumen2)] = -(np.sqrt(flux[bridges_dict[b].lumen1]) + np.sqrt(flux[bridges_dict[b].lumen2]))
-    return flux
 
 def func_Lj_hydraulic(index, t, L_vec, ell_vec, chain) :
     # CALCULATE THE FLUXES
@@ -148,13 +50,12 @@ def func_JLh(i_left, i_right, L_vec, ell_vec, chain) :
     
     #rho_L = chain.gamma * np.sin(chain.theta) #/ L0
     #rho_R = chain.gamma * np.sin(chain.theta) #/ L0    
-    rho_L = chain.lumens_dict[i_left].eps
-    rho_R = chain.lumens_dict[i_right].eps
+    gamma_L = chain.lumens_dict[i_left].gamma
+    gamma_R = chain.lumens_dict[i_right].gamma
     
     #ca_LR = chain.bridges_dict[b].ca    
     
-    return phi_R / (ellt*L_R)*(rho_L/L_L - rho_R / L_R)
-    #return phi_R / (ellt*L_R**2)*(rho_L/L_L - rho_R / L_R)
+    return phi_R / (ellt*L_R)*(gamma_L/L_L - gamma_R / L_R)
     
 def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
@@ -175,76 +76,17 @@ def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     
     phi_L = chain.lumens_dict[i_left].phi #0.5*chain.kappa*mu_L #/ L0**2
     
-    rho_L = chain.lumens_dict[i_left].eps
-    rho_R = chain.lumens_dict[i_right].eps
+    gamma_L = chain.lumens_dict[i_left].gamma
+    gamma_R = chain.lumens_dict[i_right].gamma
     
     #ca_LR = chain.bridges_dict[b].ca    
     
-    return phi_L / (ellt*L_L)*(rho_R/L_R - rho_L / L_L)
+    return phi_L / (ellt*L_L)*(gamma_R/L_R - gamma_L / L_L)
     #return phi_L / (ellt*L_L**2)*(rho_R/L_R - rho_L / L_L)
 
 # ========================================================================
 # ===================== Osmotic Hydraulic ================================
 # ========================================================================
-
-def hydroosmotic_flux2(chain, left_v_flux=0., left_s_flux=0., right_v_flux=0., right_s_flux=0.) :    
-    # Calculate the flux
-    lumens_dict, bridges_dict = chain.lumens_dict, chain.bridges_dict
-    taus, tauv = chain.taus, chain.tauv
-    flux = {}
-    xis, xiv = chain.xis, chain.xiv
-    
-    for j in lumens_dict :
-        if j != 0 and j != -1 and lumens_dict[j].length >= 1e-6:
-            i, k = net.leftright_neighbors(j, chain)              # indices of the connected lumens (i -- j -- k)
-            br_ij, br_jk = net.connected_bridges(j, bridges_dict)       # indices of the connected bridges
-            
-            if (i == 0 and k == -1) :
-                # The lumen j is connected to the two borders
-                JLv = left_v_flux
-                JRv = right_v_flux
-                
-                JLs = left_s_flux
-                JRs = right_s_flux
-                
-            elif i == 0 :
-                # The lumen j is connected to the left (0) border and k to the right
-                JLv = left_v_flux
-                JRv = func_JRv(lumen_L = lumens_dict[j], lumen_R = lumens_dict[k], bridge_LR = bridges_dict[br_jk], xis=xis, xiv=xiv, Ltot=chain.total_length)
-                
-                JLs = left_s_flux
-                JRs = func_JRs(lumen_L = lumens_dict[j], lumen_R = lumens_dict[k], bridge_LR = bridges_dict[br_jk], xis=xis, Ltot=chain.total_length)
-                
-            elif k == -1 :
-                # The lumen j is connected to i to the left and to the right (-1) border
-                JLv = func_JLv(lumen_L = lumens_dict[i], lumen_R = lumens_dict[j], bridge_LR = bridges_dict[br_ij], xis=xis, xiv=xiv, Ltot=chain.total_length)
-                JRv = right_v_flux
-                
-                JLs = func_JLs(lumen_L = lumens_dict[i], lumen_R = lumens_dict[j], bridge_LR = bridges_dict[br_ij], xis=xis, Ltot=chain.total_length)
-                JRs = right_s_flux
-                
-            else :
-                # The lumen j is connected to to two lumens i and k
-                JLs = func_JLs(lumen_L = lumens_dict[i], lumen_R = lumens_dict[j], bridge_LR = bridges_dict[br_ij], xis=xis, Ltot=chain.total_length)
-                JLv = func_JLv(lumen_L = lumens_dict[i], lumen_R = lumens_dict[j], bridge_LR = bridges_dict[br_ij], xis=xis, xiv=xiv, Ltot=chain.total_length)
-                                
-                JRs = func_JRs(lumen_L = lumens_dict[j], lumen_R = lumens_dict[k], bridge_LR = bridges_dict[br_jk], xis=xis, Ltot=chain.total_length)
-                JRv = func_JRv(lumen_L = lumens_dict[j], lumen_R = lumens_dict[k], bridge_LR = bridges_dict[br_jk], xis=xis, xiv=xiv, Ltot=chain.total_length)
-                
-            
-            J_jv = JLv + JRv
-            J_js = JLs + JRs
-            
-            #print(j, JLv, JRv, JLs, JRs)
-            dLdt = func_Lj(lumens_dict[j], J_jv, tauv)
-            dNdt = func_Nj(lumens_dict[j], J_js, taus)
-            
-            flux[j] = [J_jv, J_js]
-            #flux[j] = [dLdt, dNdt]
-        else :
-            flux[j] = [0., 0.]
-
-    return flux
 
 def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
     # CALCULATE THE FLUXES
