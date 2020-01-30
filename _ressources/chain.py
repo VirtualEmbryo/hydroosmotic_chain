@@ -477,8 +477,7 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
     error = max(error_list)
         
     new_time_step = calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=False)
-    #new_time_step = h#*calc_new_timestep(error, tolerance, secure=0.9, cst_tstep=0)     # MOD
-    #print(new_time_step)
+
     return new_time_step
     
 # ========================================================================
