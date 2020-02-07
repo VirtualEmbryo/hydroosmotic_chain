@@ -129,6 +129,14 @@ def load_config(filename) :
                 ca_bridge_list = [np.random.normal(br_avg, br_std) for b in range(my_chain.nb_lumens+1)]
                 ca_lumen_list = [np.random.normal(lum_avg, lum_std) for m in range(my_chain.nb_lumens+2)]
             
+            elif config['pumping']['pattern'] == 'normal_abs' :
+                
+                br_avg, br_std = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
+                lum_avg, lum_std = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
+                
+                ca_bridge_list = [np.abs(np.random.normal(br_avg, br_std)) for b in range(my_chain.nb_lumens+1)]
+                ca_lumen_list = [np.abs(np.random.normal(lum_avg, lum_std)) for m in range(my_chain.nb_lumens+2)]
+            
             elif config['pumping']['pattern'] == 'uniform' :
                 br_low, br_high = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
                 lum_low, lum_high = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
@@ -142,6 +150,13 @@ def load_config(filename) :
                 
                 ca_bridge_list = [b*(br_2 - br_1)/(my_chain.nb_lumens+1) + br_1 for b in range(my_chain.nb_lumens+1)]
                 ca_lumen_list = [m*(lum_2 - lum_1)/(my_chain.nb_lumens+2) + lum_1 for m in range(my_chain.nb_lumens+2)]
+            
+            elif config['pumping']['pattern'] == 'constant' :
+                br_1 = float(config['pumping']['bridge_1'])
+                lum_1 = float(config['pumping']['lumen_1'])
+                
+                ca_bridge_list = [br_1 for b in range(my_chain.nb_lumens+1)]
+                ca_lumen_list = [lum_1 for m in range(my_chain.nb_lumens+2)]
             
             else :
                 my_chain.pumping = 'None'
@@ -291,19 +306,29 @@ def calc_KQ_i(T, h, L, N, ell, chain, K_list=[], Q_list=[], coeff_list=[]) :
                 Q[j] = 0.
     return K, Q
 
-def test_DeltaK(L_vec, Ky) :
+def test_DeltaK(L_vec, ell_vec, Ky, chain) :
     repeat = False
-    index_list = []
+    index_L_list = []
+    index_ell_list = []
     for j in L_vec.keys() :
         if L_vec[j]+Ky[j] < 0 :
             #print(j)
             repeat = True
             index_list += [j]
-    
-    if len(index_list) == 0 :
-        index_list = None
+    for b in ell_vec.keys() :
         
-    return repeat, index_list
+        b_1, b_2 = chain.bridges_dict[b].lumen1, chain.bridges_dict[b].lumen2
+        if b_1 != 0 and b_1 != -1 and b_2 != 0 and b_2 != -1 :
+            if ell_vec[b] - Ky[b_1] - Ky[b_2] < 0 :
+                repeat = True
+                index_ell_list += [b]
+                print(b)
+    
+    if len(index_L_list) == 0 and len(index_ell_list) == 0:
+        index_L_list = None
+        index_ell_list = None
+        
+    return repeat, index_L_list, index_ell_list
         
 def rk45_step(t0, chain, h, alpha) :
     global pow_law
@@ -420,7 +445,7 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
             Qz = {j: (16./135)*Q1[j] + (6656./12825)*Q3[j] + (28561./56430)*Q4[j] - (9./50)*Q5[j] + (2./55)*Q6[j] for j in chain.lumens_dict.keys()}
             
             ### Test if configuration is allowed
-            repeat, index = test_DeltaK(L_vec, Kz)
+            repeat, index_L_list, index_ell_list = test_DeltaK(L_vec, ell_vec, Kz, chain)
         
         elif chain.lumen_type == 'hydraulic' :
             ### RK4 - Step 1
@@ -452,12 +477,13 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
             Kz = {j: (16./135)*K1[j] + (6656./12825)*K3[j] + (28561./56430)*K4[j] - (9./50)*K5[j] + (2./55)*K6[j] for j in chain.lumens_dict.keys()}
 
             ### Test if configuration is allowed
-            repeat, index = test_DeltaK(L_vec, Kz)
+            repeat, index_L_list, index_ell_list = test_DeltaK(L_vec, ell_vec, Kz, chain)
         
         if repeat :
             count += 1
             h = 0.5*h
-            chain.events += 'ERROR Time : ' + str(chain.time) + ' : length(s) of lumen(s) ' + str(index) + ' is negative. Time step is divided.\n'
+            chain.events += 'ERROR Time : ' + str(chain.time) + ' : length(s) of lumen(s) ' + str(index_L_list) + ' or bridge(s) ' + str(index_ell_list) + ' is negative. Time step is divided.\n'
+            print(h)
         
         if count >= 10 : print('More than 10 trials without convergence. There might be a problem.')
     
@@ -668,10 +694,11 @@ def main(configname, args) :
     chain_type = config['sim']['chain_type']
     
     dir_name = config['sim']['outdir']
+    
     # Clean dir_name if not empty
     if len(os.listdir(dir_name)) > 0 :
         for elem in os.listdir(dir_name) :
-            if not elem.endswith('.conf') :
+            if not elem.endswith('.conf') and not os.path.isdir(elem) :
                 os.remove(os.path.join(dir_name, elem))
     
     # Try to see if savefig is valid for saving figures
@@ -687,13 +714,16 @@ def main(configname, args) :
     pics_dirname=''
     if savefig :
         pics_dirname = os.path.join(dir_name,'pics')
-        try :
+        
+        if os.path.isdir(pics_dirname) :
+            if os.listdir(pics_dirname) > 0 :
+                print('Remove files from ' + pics_dirname)
+                for elem in os.listdir(pics_dirname) :
+                    os.remove(os.path.join(pics_dirname, elem))
+
+        else :
             os.mkdir(pics_dirname)
-            print(pics_dirname)
-        except :
-            print('Remove previous pictures from ' + pics_dirname)
-            for elem in os.listdir(pics_dirname) :
-               os.remove(os.path.join(pics_dirname, elem))
+        print(pics_dirname)
     
     # Run Simulation
     end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname)

@@ -43,10 +43,14 @@ class Chain :
         lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
         for b in range(len(bridges)) :
-            self.bridges_dict[int(bridges[b, 0])] = Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3])
+            self.bridges_dict[int(bridges[b, 0])] = Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=ca_bridge_list[b])
         
         for m in range(self.nb_lumens+2) :
-            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, gamma=gamma, kappa=kappa)
+            if int(lumens[m, 0]) == 0 or int(lumens[m, 0]) == -1 :
+                ca = 0.
+            else :
+                ca = ca_lumen_list[m]
+            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, gamma=gamma, kappa=kappa, ca = ca)
                     
         self.nmax = max(self.lumens_dict.keys())
         
@@ -141,7 +145,7 @@ class Chain :
         for k in self.lumens_dict.keys() :
             self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].pos]
         for b in self.bridges_dict.keys() :
-            self.rec_br[self.time][b] = [self.bridges_dict[b].length]
+            self.rec_br[self.time][b] = [self.bridges_dict[b].length, self.bridges_dict[b].lumen1, self.bridges_dict[b].lumen2]
             
     def __merge__(self, k, i, j) :
         """
@@ -152,17 +156,19 @@ class Chain :
         L_i, L_j = self.lumens_dict[i].length, self.lumens_dict[j].length
         mu_i, mu_j = self.lumens_dict[i].mu, self.lumens_dict[j].mu
         area_i, area_j = L_i**2 / mu_i, L_j**2 / mu_j
-        eps_i, eps_j = self.lumens_dict[i].eps, self.lumens_dict[j].eps
+        gamma_i, gamma_j = self.lumens_dict[i].gamma, self.lumens_dict[j].gamma
         kappa_i, kappa_j = self.lumens_dict[i].kappa, self.lumens_dict[j].kappa
+        ca_i, ca_j = self.lumens_dict[i].ca, self.lumens_dict[j].ca
         
         mu_k = 0.5*(mu_i + mu_j)
         area_k = area_i+area_j
         L_k = np.sqrt(area_k * mu_k)
         pos_k = (pos_i*area_i + pos_j*area_j) / area_k
-        eps_k = 0.5*(eps_i + eps_j)
+        gamma_k = 0.5*(gamma_i + gamma_j)
         kappa_k = 0.5*(kappa_i + kappa_j)
+        ca_k = 0.5*(ca_i+ca_j)
         
-        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, eps=eps_k, kappa=kappa_k)
+        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, gamma=gamma_k, kappa=kappa_k, ca = ca_k)
         
         # Bridge
         
@@ -218,7 +224,7 @@ class Chain :
         return ell_vec
         
 class Lumen :
-    def __init__(self, index, init_pos, init_length, theta, gamma, kappa) :
+    def __init__(self, index, init_pos, init_length, theta, gamma, kappa, ca=0.) :
         self.index = index
         self.init_pos = init_pos
         self.theta = theta
@@ -235,6 +241,8 @@ class Lumen :
         #self.phi = 0.5*kappa*self.mu / L0**2
         self.kappa = kappa
         self.phi = 0.5*self.kappa*self.mu
+        
+        self.ca = ca
         
     def __update__(self) :
         self.__calc_area__()
@@ -262,29 +270,31 @@ class Lumen :
         return self.area
         
     def __str__(self) :
-        return "Lumen {0} is at position {1:.5f} with length {2:.5f}".format(self.index, self.pos, self.length)
+        return "Lumen {0} is at position {1:.5f} with length {2:.5f} and pumping {3:.5f}".format(self.index, self.pos, self.length, self.ca)
         
     def __save__(self) :
-        return "Lumen {0} is at position {1:.3f} with length {2:.3f}".format(self.index, self.pos, self.length)
+        return "Lumen {0} is at position {1:.5f} with length {2:.5f} and pumping {3:.5f}".format(self.index, self.pos, self.length, self.ca)
     
     def __copy__(self) :
-        return Lumen(self.index, self.init_pos, self.length, self.theta, self.gamma, self.kappa)
+        return Lumen(self.index, self.init_pos, self.length, self.theta, self.gamma, self.kappa, self.ca)
         
 class Bridge :
-    def __init__(self, index, lumen1, lumen2, length) :
+    def __init__(self, index, lumen1, lumen2, length, ca=0.) :
         self.index = index
         self.lumen1 = int(lumen1)
         self.lumen2 = int(lumen2)
         self.length = length
+        
+        self.ca = ca
 
     def __str__(self) :
-        return "Bridge {0} : ({1}, {2}) has length {3:.5}".format(self.index, self.lumen1, self.lumen2, self.length)
+        return "Bridge {0} : ({1}, {2}) has length {3:.5f} with pumping {4:.5f}".format(self.index, self.lumen1, self.lumen2, self.length, self.ca)
     
     def __save__(self) :
-        return "Bridge {0} : ({1}, {2}) has length {3:.5}".format(self.index, self.lumen1, self.lumen2, self.length)
+        return "Bridge {0} : ({1}, {2}) has length {3:.5} with pumping {4:.5f}".format(self.index, self.lumen1, self.lumen2, self.length, self.ca)
     
     def __copy__(self) :
-        return Bridge(self.index, self.lumen1, self.lumen2, self.length)
+        return Bridge(self.index, self.lumen1, self.lumen2, self.length, self.ca)
         
 # ============================================================
 # ==================  Osmotic Chain  =========================

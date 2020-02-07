@@ -27,7 +27,7 @@ def func_Lj_hydraulic(index, t, L_vec, ell_vec, chain) :
     
     Jjh = Jjh_left + Jjh_right
     
-    return chain.tau*Jjh
+    return Jjh
     
 def func_JLh(i_left, i_right, L_vec, ell_vec, chain) :
     if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
@@ -46,16 +46,14 @@ def func_JLh(i_left, i_right, L_vec, ell_vec, chain) :
     
     mu_R  = chain.lumens_dict[i_right].mu
     
-    phi_R = chain.lumens_dict[i_right].phi #0.5*chain.kappa*mu_R #/ L0**2
+    phi_R = chain.lumens_dict[i_right].phi
     
-    #rho_L = chain.gamma * np.sin(chain.theta) #/ L0
-    #rho_R = chain.gamma * np.sin(chain.theta) #/ L0    
     gamma_L = chain.lumens_dict[i_left].gamma
     gamma_R = chain.lumens_dict[i_right].gamma
     
-    #ca_LR = chain.bridges_dict[b].ca    
+    ca_R = chain.lumens_dict[i_right].ca
     
-    return phi_R / (ellt*L_R)*(gamma_L/L_L - gamma_R / L_R)
+    return phi_R / (ellt*L_R)*(gamma_L/L_L - gamma_R / L_R) + ca_R
     
 def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
@@ -74,15 +72,14 @@ def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     
     mu_L  = chain.lumens_dict[i_left].mu
     
-    phi_L = chain.lumens_dict[i_left].phi #0.5*chain.kappa*mu_L #/ L0**2
+    phi_L = chain.lumens_dict[i_left].phi
     
     gamma_L = chain.lumens_dict[i_left].gamma
     gamma_R = chain.lumens_dict[i_right].gamma
     
-    #ca_LR = chain.bridges_dict[b].ca    
+    ca_L = chain.lumens_dict[i_left].ca    
     
-    return phi_L / (ellt*L_L)*(gamma_R/L_R - gamma_L / L_L)
-    #return phi_L / (ellt*L_L**2)*(rho_R/L_R - rho_L / L_L)
+    return phi_L / (ellt*L_L)*(gamma_R/L_R - gamma_L / L_L) + ca_L
 
 # ========================================================================
 # ===================== Osmotic Hydraulic ================================

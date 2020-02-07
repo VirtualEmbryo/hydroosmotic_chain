@@ -199,12 +199,12 @@ def detect_lumens_borders(index, chain) :
     
     if l_ia < 0 or lumens_dict[index].pos < lumens_dict[0].pos:
         #print 'Must move right !'
-        length_to_move = lumens_dict[index].length - (lumens_dict[index].pos-lumens_dict[0].pos) + l_merge*0.1
+        length_to_move = lumens_dict[index].length - (lumens_dict[index].pos-lumens_dict[0].pos) + l_merge#*0.1
         return  length_to_move
     
     elif l_ib < 0 or lumens_dict[index].pos > lumens_dict[-1].pos :
         #print 'Must move left !'
-        length_to_move = -lumens_dict[index].length + (lumens_dict[-1].pos-lumens_dict[index].pos) - l_merge*0.1
+        length_to_move = -lumens_dict[index].length + (lumens_dict[-1].pos-lumens_dict[index].pos) - l_merge#*0.1
         return  length_to_move
     
     else : return length_to_move

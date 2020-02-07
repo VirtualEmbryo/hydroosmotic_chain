@@ -116,6 +116,9 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig 
     plt.suptitle('t = ' + "{:5.5f}".format(chain.time))
     plt.plot(x, h_d, linewidth = lw, color = contour_color)
     plt.plot(x, h_u, linewidth = lw, color = contour_color)
+
+    xmin, xmax = np.min(x), np.max(x)
+    plt.xlim(xmin, xmax)
     
     if centers :
         for k in list(chain.lumens_dict.keys()) :
@@ -176,6 +179,7 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
 
     for t in time_list :
         s = ''
+        # Write the lumens
         for n in chain.rec[t].keys() :
             
             if n != 0 and n != -1 :
@@ -191,9 +195,10 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
         
         file_all.write(s)
         
+        # Write the bridges
         sb = ''
         for b in chain.rec_br[t].keys() :
-            sb += str(b) + '\t' + str(t) + '\t' + str(chain.rec_br[t][b][0]) + '\n'
+            sb += str(b) + '\t' + str(t) + '\t' + str(chain.rec_br[t][b][0]) + '\t'+ str(chain.rec_br[t][b][1]) + '\t'+ str(chain.rec_br[t][b][2]) +'\n'
             
         file_br.write(sb)    
         
@@ -275,14 +280,15 @@ def load_brfile(filename, skiprows=0, max_rows=0) :
         dat = np.loadtxt(filename, skiprows=skiprows)
     
     Nmax = int(np.max(dat[:, 0]))
-
     ell_a = {}
     
     for i in range(len(dat)) :
         t = dat[i, 1]
         if t not in ell_a.keys() :
             ell_a[t] = {}
-    
+        
+        #if dat[i, 3] != 0 and dat[i, 3] != -1 and dat[i, 4] != 0 dat[i, 4] != -1 :
+        #    ell_a[t][int(dat[i, 0])] = dat[i, 2]
         ell_a[t][int(dat[i, 0])] = dat[i, 2]
 
     ell_array = np.zeros(( len(ell_a.keys()), Nmax+2 ))
