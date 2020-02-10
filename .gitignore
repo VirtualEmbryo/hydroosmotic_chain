@@ -2,19 +2,13 @@
 
 *.pyc
 __pycache__/*
-*.ipynb
 
 *.dat
 .DS_Store
-out/*
-*.conf
-*.conf.tpl
+
 _data
 _data/*
-_notebook
-_notebook/*
-_configfiles/*
-_configfiles
+
 
 *.eps
 *.png
