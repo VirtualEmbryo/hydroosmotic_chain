@@ -181,7 +181,6 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
         s = ''
         # Write the lumens
         for n in chain.rec[t].keys() :
-            
             if n != 0 and n != -1 :
                 if 1 :
                     if chain_type == 'hydroosmotic' :
@@ -197,6 +196,7 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
         
         # Write the bridges
         sb = ''
+        
         for b in chain.rec_br[t].keys() :
             sb += str(b) + '\t' + str(t) + '\t' + str(chain.rec_br[t][b][0]) + '\t'+ str(chain.rec_br[t][b][1]) + '\t'+ str(chain.rec_br[t][b][2]) +'\n'
             

@@ -640,6 +640,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 if state_simul :
                     #print('Step : ', step, ' ; Time : ', "{:4.6f}".format(chain.time), ' ; Nb Lumens : ', len(chain.lumens_dict)-2, end='\t\r')
                     print('Step : ', step, ' ; Time : ', "{:4.6f}".format(chain.time), ' ; Nb Lumens : ', len(chain.lumens_dict)-2)
+                
+                # Records the details of the chain
                 save_data = recording
                 if save_data :
                     #print('save', chain.lumen_type)
