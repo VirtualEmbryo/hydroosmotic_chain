@@ -13,3 +13,7 @@ _data/*
 *.eps
 *.png
 *.jpg
+
+.ipynb_checkpoints
+.ipynb_checkpoints/*
+
