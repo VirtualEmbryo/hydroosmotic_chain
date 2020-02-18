@@ -560,7 +560,7 @@ class Osmotic_Lumen(Lumen) :
         return self.dconcentration
     
     def __str__(self) :
-        return "Lumen {0} is at position {1:.3f} with length {2:.3f} and {3:.3f} ions with pumping {4:.3f}".format(self.index, self.pos, self.length, self.nb_ions, self.ca)
+        return "Lumen {0} is at position {1:.5f} with length {2:.5f} and {3:.5f} ions with pumping {4:.5f}".format(self.index, self.pos, self.length, self.nb_ions, self.ca)
         
     def __copy__(self) :
         return Osmotic_Lumen(self.index, self.pos, self.length, self.nb_ions, self.theta, self.eps, self.ca)
@@ -574,7 +574,7 @@ class Osmotic_Bridge(Bridge) :
         self.ca = ca
         
     def __str__(self) :
-        return "Bridge {0} : ({1}, {2}) has length {3:.5} with pumping {4:.3f}".format(self.index, self.lumen1, self.lumen2, self.length, self.ca)
+        return "Bridge {0} : ({1}, {2}) has length {3:.5f} with pumping {4:.5f}".format(self.index, self.lumen1, self.lumen2, self.length, self.ca)
         
     def __save__(self) :
         return "Bridge {0} : ({1}, {2}) has length {3:.5} with pumping {4:.3f}".format(self.index, self.lumen1, self.lumen2, self.length, self.ca)

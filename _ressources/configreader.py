@@ -6,6 +6,8 @@ module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 if module_path not in sys.path :
     sys.path.append(module_path)
 
+
+
 class Config() :
     def __init__(self) :
         self.config = {}
@@ -38,13 +40,23 @@ class Config() :
         self.config, self.categories = self.read_config(string_file)
         return self.config
     
-    def write(self, filename) :
+    def write(self, filename, keys_order = []) :
         f = open(filename, 'w')
-        for key in self.config.keys() :
-            f.write('['+str(key)+']\n')
-            for sub_key in self.config[key].keys() :
-                f.write(str(sub_key) + ' = ' + str(self.config[key][sub_key]) + '\n')
-            f.write('\n')
+        if len(keys_order) == 0 :
+            for key in self.config.keys() :
+                f.write('['+str(key)+']\n')
+                for sub_key in self.config[key].keys() :
+                    f.write(str(sub_key) + ' = ' + str(self.config[key][sub_key]) + '\n')
+                f.write('\n')
+        else :
+            
+            for line in keys_order :
+                key = line[0]
+                sub_keys_order = line[1]
+                f.write('['+str(key)+']\n')
+                for sub_key in sub_keys_order :
+                    f.write(str(sub_key) + ' = ' + str(self.config[key][sub_key]) + '\n')
+                f.write('\n')
         f.close()
     
     def add(self, category, name, value) :
@@ -68,6 +80,13 @@ class Config() :
             if option1 in self.categories() :
                 return True
         else :
-            if option1 in self.config.keys() and option2 in self.config[option1].keys()  :
+            if option1 in self.config.keys() and option2 in self.config[option1].keys() :
                 return True
         return False
+        
+    def get_item(self, key, subkey) :
+        return self.config[key][subkey]
+        
+    def set_item(self, key, subkey, value) :
+        self.config[key][subkey] = value
+        return ;

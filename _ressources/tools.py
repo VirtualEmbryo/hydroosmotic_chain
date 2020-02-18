@@ -326,9 +326,10 @@ def calc_A_tot(L) :
 # ============================= Plots ====================================
 # ========================================================================
 
-def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 7), x_logscale=False, y_logscale=False, show_meanlength = True) :
+def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 7), x_logscale=False, y_logscale=False, show_meanlength = True, title='') :
     fig, ax = plt.subplots(2, 2, figsize=figsize)
-
+    if len(title) > 0 :
+        plt.suptitle(title, fontsize=20)
     tmin, tmax = 0., 0.4
 
     if x_logscale :
@@ -383,6 +384,8 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
     #ax[1, 1].set_xlim(tmin, tmax)
     if savefig :
         plt.savefig(savename, format='eps')
+        
+    
     plt.show()
     
 def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 4), x_logscale=False, y_logscale=False, show_meanlength = True, xlim=[]) :

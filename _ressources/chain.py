@@ -71,8 +71,8 @@ def load_config(filename) :
     # Import pre-written configuration if specified
     if len(path) > 0 :
         print('Import config from ' + path)      
-        lumens_array = np.loadtxt(path+'lumens.dat', delimiter = '\t', comments = '#')
-        bridges_array = np.loadtxt(path+'bridges.dat', delimiter = '\t', comments = '#')
+        lumens_array = np.loadtxt(os.path.join(path,'lumens.dat'), delimiter = '\t', comments = '#')
+        bridges_array = np.loadtxt(os.path.join(path,'bridges.dat'), delimiter = '\t', comments = '#')
         
         if lumen_type == 'hydroosmotic' :
             my_chain = lc.Osmotic_Chain(nb_lumens = len(lumens_array)-2, e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
@@ -314,7 +314,7 @@ def test_DeltaK(L_vec, ell_vec, Ky, chain) :
         if L_vec[j]+Ky[j] < 0 :
             #print(j)
             repeat = True
-            index_list += [j]
+            index_L_list += [j]
     for b in ell_vec.keys() :
         
         b_1, b_2 = chain.bridges_dict[b].lumen1, chain.bridges_dict[b].lumen2
@@ -622,7 +622,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                             if k != 0 and k != -1 :
                                 my_chain.winner = k
                         
-                        chain.events += 'Time : ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(my_chain.winner))
+                        chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(my_chain.winner))
                     elif len(chain.lumens_dict) - 2 == 0 :
                         end = 1
                         print('End simulation : 0 Lumen left')
@@ -638,7 +638,6 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     
             if step % nb_frames == 0 :
                 if state_simul :
-                    #print('Step : ', step, ' ; Time : ', "{:4.6f}".format(chain.time), ' ; Nb Lumens : ', len(chain.lumens_dict)-2, end='\t\r')
                     print('Step : ', step, ' ; Time : ', "{:4.6f}".format(chain.time), ' ; Nb Lumens : ', len(chain.lumens_dict)-2)
                 
                 # Records the details of the chain
@@ -726,6 +725,8 @@ def main(configname, args) :
         else :
             os.mkdir(pics_dirname)
         print(pics_dirname)
+        x = np.linspace(0, my_chain.total_length, 1001)
+        tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(0).zfill(8)+'.png'))
     
     # Run Simulation
     end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname)
