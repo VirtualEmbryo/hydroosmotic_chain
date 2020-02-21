@@ -161,7 +161,7 @@ def clear_folder(dir_name) :
             print('Error : directory ' + dir_name + ' not cleaned...')
             return 2
             
-def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='', chain_type='hydroosmotic') :
+def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='', chain_type='hydroosmotic', erase=True) :
     try :
         os.mkdir(folder)
     except : pass
@@ -204,11 +204,74 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
         
     file_all.close()
     file_br.close()
-        
-    chain.rec = {}
-    chain.rec_br = {}
-    chain.events = ''
     
+    if erase :
+        chain.rec = {}
+        chain.rec_br = {}
+    
+    chain.events = ''
+
+# ========================================================================
+# ========================== Events file =================================
+# ========================================================================
+
+def check_slope(index, t0, t1, rec) :
+    #print(rec[time2][index][0] - rec[time1][index][0])
+    return rec[t1][index][0] - rec[t0][index][0]
+    
+def find_winner(chain) :
+    for k in chain.lumens_dict.keys() : 
+        if k != 0 and k != -1 :
+            chain.winner = k
+    return chain.winner
+    
+def find_nmax(array, n)  :
+    return np.sort(np.partition(array, -n)[-n:])
+    
+def check_ending_event(chain) :
+    
+    if len(chain.lumens_dict) - 2 == 0 :
+        return 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0)
+        
+    else :
+        w = find_winner(chain)
+        tend_array = find_nmax(chain.rec.keys(), 3)
+        try :
+            s = check_slope(w, tend_array[0], tend_array[1], chain.rec)
+            if s > 0. :
+                # Coarsening
+                ev = 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (C) is lumen ' + str(w)
+                return ev
+            elif s < 0. :
+                # Disparition
+                ev = 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (D) is lumen ' + str(0)
+                return ev
+        except :
+            ev = 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (M) is lumen ' + str(w)
+            return ev
+            
+    
+def write_ending_event(end, chain, eventfilename) :
+    f = open(eventfilename, 'a+')
+    if end == 0 :
+        # Error
+        f.write('Simulation stopped before the end.')
+    elif end == 1 :
+        # Zero lumen left
+        f.write('Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0))
+    elif end == 2 :
+        # One lumen left
+        out = check_ending_event(chain)
+        f.write(out)
+        
+    elif end == 10 :
+        # Max step
+        f.write('Simulation stopped [End code 10 : max step reached].')
+    elif end == 11 :
+        # Full size
+        f.write('Simulation stopped [End code 11 : full system size reached].')
+    return;
+
 # ========================================================================
 # ============================ Loading ===================================
 # ========================================================================

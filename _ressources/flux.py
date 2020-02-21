@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import sys
+import warnings
 
 module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 
@@ -13,6 +14,18 @@ try :
 except :
     import network as net
     import topology
+    
+    
+# ========================================================================
+# =========================== Warnings ===================================
+# ========================================================================
+# This raises RuntimeWarning as an error, that will stop the simulation.
+# It typically happens in hydroosmotic fluxes, when calculating cosh(x), x > 1000
+warnings.filterwarnings('error')
+try : 
+    warnings.warn(RuntimeWarning())
+except Warning :
+    print('RuntimeWarning is now an exception.')
 
 # ========================================================================
 # ========================== Hydraulic ===================================

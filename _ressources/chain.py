@@ -9,6 +9,7 @@ python3 chain.py config.conf [options]
     -------
     -h : help
     -v : print the steps
+    -r : do not register at frames
 
 
     Contains
@@ -322,7 +323,6 @@ def test_DeltaK(L_vec, ell_vec, Ky, chain) :
             if ell_vec[b] - Ky[b_1] - Ky[b_2] < 0 :
                 repeat = True
                 index_ell_list += [b]
-                print(b)
     
     if len(index_L_list) == 0 and len(index_ell_list) == 0:
         index_L_list = None
@@ -412,8 +412,10 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
     repeat = True
     
     count = 0
+    
     while repeat :
         if chain.lumen_type == 'hydroosmotic' :
+            
             ### RK4 - Step 1
             K1, Q1 = calc_KQ_i(t0, h, L_vec, N_vec, ell_vec, chain)
 
@@ -446,7 +448,6 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
             
             ### Test if configuration is allowed
             repeat, index_L_list, index_ell_list = test_DeltaK(L_vec, ell_vec, Kz, chain)
-        
         elif chain.lumen_type == 'hydraulic' :
             ### RK4 - Step 1
             K1 = calc_K_i(t0, h, L_vec, ell_vec, chain)
@@ -483,7 +484,6 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
             count += 1
             h = 0.5*h
             chain.events += 'ERROR Time : ' + str(chain.time) + ' : length(s) of lumen(s) ' + str(index_L_list) + ' or bridge(s) ' + str(index_ell_list) + ' is negative. Time step is divided.\n'
-            print(h)
         
         if count >= 10 : print('More than 10 trials without convergence. There might be a problem.')
     
@@ -503,7 +503,7 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
     error = max(error_list)
         
     new_time_step = calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=False)
-
+    
     return new_time_step
     
 # ========================================================================
@@ -539,7 +539,7 @@ def system(chain, h=1e-2, recording = False, method = 'rk45', tolerance=1e-10, a
         
     elif chain.nb_lumens == 1 and 2*chain.lumens_dict[max(chain.lumens_dict.keys())].length >= chain.total_length :
         stop = True
-        stop_cause = 'end_simul'
+        stop_cause = 'full_size'
         
     elif chain.nb_lumens <= 1 :
         stop = True
@@ -579,27 +579,37 @@ def save_ell(t, ellt, filename) :
 # ========================================================================
 # ===========================  RUN  ======================================
 # ========================================================================
+
+def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45', state_simul=False, pics_dirname='pics', frame_reg=True) :
+    """
     
-def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45', state_simul=False, pics_dirname='pics') :
+    Returns
+    -------
+    end : int
+        0 : a problem occured during simulation
+    
+        10 : max step reached
+        11 : full size reached
+    """
     # Default parameters
     stop = False            # to stop simulation
     step = 0                # simulation step number
     N0 = chain.nmax         # number of lumens
     h = alpha / N0          # integration constant
-    x = np.linspace(0, my_chain.total_length, 1001)     # x-axis positions
+    x = np.linspace(0, chain.total_length, 1001)     # x-axis positions
 
     make_Nfile(N0=N0, filename='sim_nlum.dat', folder = dir_name)
-    make_ellfile(ell_avg=my_chain.__calc_ell_avg__(), filename='sim_ell_avg.dat', folder = dir_name)
+    make_ellfile(ell_avg=chain.__calc_ell_avg__(), filename='sim_ell_avg.dat', folder = dir_name)
     
-    if 1 :
-    #try :
+    #if 1 :
+    try :
         for i in range(max_step) :
             step += 1
             # make a step
 
             stop, stop_cause, h = system(chain, h=h, recording = recording, method = solver, tolerance=1e-10, alpha=alpha)
-            
             chain.time += h
+            
             
             # chech topology
             tplg.topology(chain)
@@ -608,29 +618,32 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             save_N(chain.time, len(chain.lumens_dict)-2, os.path.join(dir_name, 'sim_nlum.dat'))
             
             # Save bridges lengths
-            ellt_avg = my_chain.__calc_ell_avg__()
+            ellt_avg = chain.__calc_ell_avg__()
             save_ell(chain.time, ellt_avg, os.path.join(dir_name, 'sim_ell_avg.dat'))
             
             if stop == 1 :
-                if stop_cause == 'end_simul':
+                if stop_cause == 'Empty' or stop_cause == 'Fusion' :
+                    tplg.topology(chain)
+                    stop = 0
+                    
+                elif stop_cause == 'end_simul':
+                    
                     # One lumen left : return 2 ; otherwise return 1
                     if len(chain.lumens_dict) - 2 == 1 :
                         end = 2
                         print('End simulation : 1 Lumen left')
                         
-                        for k in chain.lumens_dict.keys() : 
-                            if k != 0 and k != -1 :
-                                my_chain.winner = k
-                        
-                        chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(my_chain.winner))
+                        #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + end_event + ') is lumen ' + str(int(chain.winner))
+                    
                     elif len(chain.lumens_dict) - 2 == 0 :
                         end = 1
+                        #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0)
                         print('End simulation : 0 Lumen left')
                     break ;
-            
-                elif stop_cause == 'Empty' or stop_cause == 'Fusion' :
-                    tplg.topology(chain)
-                    stop = 0
+                
+                elif stop_cause == 'full_size' :
+                    print('End simulation : system is fully occupied')
+                    end = 11
 
                 
             if savefig == True and step % nb_frames == 0 :
@@ -642,16 +655,16 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 
                 # Records the details of the chain
                 save_data = recording
-                if save_data :
+                if save_data and frame_reg :
                     #print('save', chain.lumen_type)
-                    tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type)
+                    tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
                     
             if step == max_step :
                 print('\n\nEnd simulation : max step reached')
                 tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
-
         
-        if i == max_step-1 :
+        # Last step
+        if i == max_step-1 :    # reached maximum step
             end = 10
             
         if savefig :
@@ -659,11 +672,17 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
 
         save_data = recording
         if save_data :
-            tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type)
-    else :
-    #except :
-        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
-        print('\n\nSimulation stopped before the end...')
+            tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=False)
+    #else :
+    except RuntimeWarning :
+        # RuntimeWarning is raised only in the flux.py library
+        # If a RuntimeWarning exception occurs, it is raised as an exception.
+        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, erase=False)
+        print('\nSimulation stopped before the end, flow error.')
+        end = 0
+    except :
+        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, erase=False)
+        print('\nSimulation stopped before the end...')
         end = 0
     
     return end ;
@@ -675,12 +694,15 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
 def main(configname, args) :
     # Initialize arguments
     state_simul = False
+    frame_reg = True
     
     # Import arguments from the console (if any...)
     if len(args) > 0 :
         for arg in args :
             if arg.startswith('-v') :
                 state_simul = True
+            if arg.startswith('-r') :
+                frame_reg = False
     
     # Load Configuration file
     config, my_chain = load_config(configname)
@@ -729,18 +751,11 @@ def main(configname, args) :
         tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(0).zfill(8)+'.png'))
     
     # Run Simulation
-    end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname)
-        
+    end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname, frame_reg=frame_reg)
+    # Add the ending event to events.log
+    tools.write_ending_event(end, chain=my_chain, eventfilename='events.log')
     
-    # Add the winner to the init_chain.dat
-    if end == 2 :
-        f = open(os.path.join(dir_name, 'init_chain.dat'), 'a+')
-        f.write('========= END =========\n')
-        f.write('Winner : ' + str(int(my_chain.winner)))
-        f.close()
-    # Move the config file into the directory
-    #os.rename(configname, os.path.join(dir_name, configname))
-    #Save the final configuration - if not finished, allows to restart a configuration.
+    # Save the final chain in the end_chain.dat file
     my_chain.__save__(os.path.join(dir_name, 'end_chain.dat'))
     return ;
     
