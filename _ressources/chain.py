@@ -189,6 +189,13 @@ def load_config(filename) :
         
         #my_chain.xis = chis*my_chain.total_length
         #my_chain.xiv = chiv*my_chain.total_length
+    
+    # Merging
+    if conf.has_option('topology', 'merge') :
+        my_chain.merge = eval(config['topology']['merge'])
+        if not my_chain.merge : print('Merging not allowed')
+    else :
+        my_chain.merge = True
         
     #print(my_chain)
     return config, my_chain
@@ -715,6 +722,7 @@ def main(configname, args) :
     nb_frames = int(config['sim']['nb_frames'])
     solver = config['integration']['solver']
     chain_type = config['sim']['chain_type']
+    
     
     dir_name = config['sim']['outdir']
     

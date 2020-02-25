@@ -238,6 +238,7 @@ def check_ending_event(chain) :
         tend_array = find_nmax(chain.rec.keys(), 3)
         try :
             s = check_slope(w, tend_array[0], tend_array[1], chain.rec)
+            
             if s > 0. :
                 # Coarsening
                 ev = 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (C) is lumen ' + str(w)
@@ -389,7 +390,7 @@ def calc_A_tot(L) :
 # ============================= Plots ====================================
 # ========================================================================
 
-def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 7), x_logscale=False, y_logscale=False, show_meanlength = True, title='') :
+def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 7), x_logscale=False, y_logscale=False, show_meanlength = True, title='', xlim=[], nbins=0) :
     fig, ax = plt.subplots(2, 2, figsize=figsize)
     if len(title) > 0 :
         plt.suptitle(title, fontsize=20)
@@ -440,18 +441,30 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
     ax[1, 1].set_title('Concentrations', fontsize=15)
     for k in range(1, len(nions[0])) :
         ax[1, 1].plot(nions[:, 0], nions[:, k]*mu / L[:, k]**2, linewidth=2)
-    
 
     ax[1, 1].grid()
     ax[1, 1].set_xlabel('Time [s]')
-    #ax[1, 1].set_xlim(tmin, tmax)
+    
+    
+    if len(xlim) > 0 :
+        ax[0, 0].set_xlim(xlim[0], xlim[1])
+        ax[0, 1].set_xlim(xlim[0], xlim[1])
+        ax[1, 0].set_xlim(xlim[0], xlim[1])
+        ax[1, 1].set_xlim(xlim[0], xlim[1])
+        
+    if nbins > 0 :
+        ax[0, 0].locator_params(nbins=nbins)
+        ax[0, 1].locator_params(nbins=nbins)
+        ax[1, 0].locator_params(nbins=nbins)
+        ax[1, 1].locator_params(nbins=nbins)
+    
     if savefig :
         plt.savefig(savename, format='eps')
         
     
     plt.show()
     
-def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 4), x_logscale=False, y_logscale=False, show_meanlength = True, xlim=[]) :
+def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 4), x_logscale=False, y_logscale=False, show_meanlength = True, xlim=[], nbins=0) :
     fig, ax = plt.subplots(1, 2, figsize=figsize)
 
     tmin, tmax = 0., 0.4
@@ -489,6 +502,10 @@ def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savena
     ax[1].set_xlabel('Time [s]')
     if len(xlim) > 0 :
         ax[1].set_xlim(xlim[0], xlim[1])
+    
+    if nbins > 0 :
+        ax[0].locator_params(nbins=nbins)
+        ax[1].locator_params(nbins=nbins)
 
     if savefig :
         plt.savefig(savename, format='eps')

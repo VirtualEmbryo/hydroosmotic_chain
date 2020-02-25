@@ -21,11 +21,13 @@ except :
 # ========================================================================
 # This raises RuntimeWarning as an error, that will stop the simulation.
 # It typically happens in hydroosmotic fluxes, when calculating cosh(x), x > 1000
-warnings.filterwarnings('error')
-try : 
-    warnings.warn(RuntimeWarning())
-except Warning :
-    print('RuntimeWarning is now an exception.')
+warn = True
+if warn :
+    warnings.filterwarnings('error')
+    try : 
+        warnings.warn(RuntimeWarning())
+    except Warning :
+        print('RuntimeWarning is now an exception.')
 
 # ========================================================================
 # ========================== Hydraulic ===================================

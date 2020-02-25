@@ -17,11 +17,19 @@ def topology(chain) :
     delete(chain)
     
     count = 0    
-    while borders(chain) or collisions(chain) :
-        count += 1
+    if chain.merge :
+        while borders(chain) or collisions(chain) :
+            count += 1
         
-        if count > 10 :
-            print('More than 10 topological events... The time step is maybe too big.')
+            if count > 10 :
+                print('More than 10 topological events... The time step is maybe too big.')
+    else :
+        #print('Merging not allowed')
+        while borders(chain) :
+            count += 1
+        
+            if count > 10 :
+                print('More than 10 topological events... The time step is maybe too big.')
     
     chain.nb_lumens = len(chain.lumens_dict)-2
     #print(chain.time, chain.nb_lumens)

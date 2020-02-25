@@ -35,7 +35,7 @@ datadir = '~/git/chain_lumen/_data'
 
 keys_order = []
 keys_order += [['sim', ['path', 'nlumens', 'e0', 'recording', 'chain_type', 'pumping', 'nb_frames', 'savefig', 'outdir', 'seed']]]
-keys_order += [['topology', ['l_merge', 'l_dis', 'avg_size', 'std_size', 'avg_dist', 'std_dist', 'dist_toleft', 'dist_toright', 'eps']]]
+keys_order += [['topology', ['l_merge', 'l_dis', 'avg_size', 'std_size', 'avg_dist', 'std_dist', 'dist_toleft', 'dist_toright', 'eps', 'merge']]]
 keys_order += [['integration', ['solver', 'max_step', 'alpha', 'tolerance']]]
 keys_order += [['hydroosmotic', ['equilibrium', 'nions_avg', 'nions_std', 'chis', 'chiv', 'taus', 'tauv']],]
 keys_order += [['hydraulic', ['kappa', 'tau', 'gamma']],]

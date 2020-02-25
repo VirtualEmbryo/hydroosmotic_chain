@@ -98,6 +98,8 @@ class Chain :
         cp_chain.rec_br = self.rec_br
         cp_chain.nmax = self.nmax
         cp_chain.events = self.events
+        cp_chain.merge = self.merge
+        
         cp_chain.tau = self.tau
         #cp_chain.gamma = self.gamma
         #cp_chain.kappa = self.kappa
@@ -400,6 +402,7 @@ class Osmotic_Chain(Chain):
         cp_chain.rec_br = self.rec_br
         cp_chain.nmax = self.nmax
         cp_chain.events = self.events
+        cp_chain.merge = self.merge
         
         cp_chain.pumping = self.pumping
         #if cp_chain.pumping != None :
