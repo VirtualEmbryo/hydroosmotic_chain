@@ -580,23 +580,28 @@ def make_ellfile(ell_avg, filename, folder) :
 
 def save_distribfile(chain, filename_l, filename_nion, folder) :
     file_length = open(os.path.join(folder, filename_l), 'a')
-    file_nion = open(os.path.join(folder, filename_nion), 'a')
     s_length = str(chain.time) + '\t'
-    s_nion = str(chain.time)+ '\t'
+    
+    if chain.lumen_type == 'hydroosmotic' :
+        file_nion = open(os.path.join(folder, filename_nion), 'a')
+        s_nion = str(chain.time)+ '\t'
     
     for k in chain.lumens_dict.keys() :
         if k != 0 and k != -1 :
             s_length += str(chain.lumens_dict[k].length) + '\t'
-            s_nion += str(chain.lumens_dict[k].nb_ions) + '\t'
+            if chain.lumen_type == 'hydroosmotic' : 
+                s_nion += str(chain.lumens_dict[k].nb_ions) + '\t'
     s_length += '\n'
-    s_nion += '\n'
+    if chain.lumen_type == 'hydroosmotic' : 
+        s_nion += '\n'
     
     file_length.write(s_length)
-    file_nion.write(s_nion)
-    
     file_length.close()
-    file_nion.close()
     
+    if chain.lumen_type == 'hydroosmotic' : 
+        file_nion.write(s_nion)
+        file_nion.close()
+
 
 def save_N(t, Nt, filename) :
     file_N = open(filename, 'a')
@@ -607,7 +612,6 @@ def save_ell(t, ellt, filename) :
     file_ell = open(filename, 'a')
     file_ell.write(str(t)+'\t'+str(ellt)+'\n')
     file_ell.close()
-    
     
 # ========================================================================
 # ===========================  RUN  ======================================
@@ -643,7 +647,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             stop, stop_cause, h = system(chain, h=h, recording = recording, method = solver, tolerance=1e-10, alpha=alpha)
             chain.time += h
             
-            # chech topology
+            # check topology
             #if not stop :
             tplg.topology(chain)
     

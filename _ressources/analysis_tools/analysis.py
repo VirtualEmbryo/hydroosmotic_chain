@@ -117,7 +117,50 @@ def distrib(line, nbins=10) :
             values += [float(elem)]
     return time, np.histogram(values, bins=nbins)
 
+def batch_window(data, wmin, wmax, nwindow) :
+    window = np.logspace(wmin, wmax, nwindow)
+    time = np.cumsum(window)
+    batch = []
+    for i in range(len(time)) :
+        indices = np.argwhere(np.abs(data[:, 0] - time[i]) <= window[i])[:, 0]
+        batch += [data[indices]]
+    return batch    
 
+def batch_average(batchlist) :
+    B_avg = []
+    B_std = []
+
+    for i in range(len(batchlist[0])) :
+        Lavg = []
+        Lstd = []
+        for b in batchlist :
+            Lavg += [np.average(b[i], axis=0)]
+            Lstd += [np.std(b[i], axis=0)]
+    
+        tavg = np.nanmean([Lavg[j][0] for j in range(len(Lavg))])
+        navg = np.nanmean([Lavg[j][1] for j in range(len(Lavg))])
+        
+        tstd = np.nanstd([Lstd[j][0] for j in range(len(Lstd))])
+        nstd = np.nanstd([Lstd[j][1] for j in range(len(Lstd))])
+        
+        B_avg += [[tavg, navg]]
+        B_std += [[tstd, nstd]]
+        
+    B_avg = np.array(B_avg)
+    B_std = np.array(B_std)
+    
+    return B_avg, B_std
+
+def batch(data_dict, wmin, wmax, nwindow) :
+    window = np.logspace(wmin, wmax, nwindow)
+    time = np.cumsum(window)
+    dat_batch_list = []
+    for k in data_dict.keys() :
+        dat_batch_list += [batch_window(data_dict[k], wmin=wmin, wmax=wmax, nwindow=nwindow)]
+        print(k, end='\r')
+    print('End of import !')
+    B_avg, B_std = batch_average(dat_batch_list)
+    return B_avg, B_std
 
 if __name__ == '__main__' :
     if len(sys.argv) < 2:
