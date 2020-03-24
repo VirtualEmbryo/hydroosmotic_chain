@@ -110,6 +110,7 @@ def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
     #print('H-Flux from left is  :', Jjv_left)
     #print('H-Flux from right is :', Jjv_right)
     Jjv = Jjv_left + Jjv_right
+    #Jjv = 0
     
     # GEOMETRIC VALUES
     mu_j, nu_j, eps_j = chain.lumens_dict[index].mu, chain.lumens_dict[index].nu, chain.lumens_dict[index].eps
@@ -117,14 +118,14 @@ def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
     Lj, Nj = L_vec[index], N_vec[index]
 
     ell_ij, ell_jk = 1, 1
-    
-    save_fluxes = False
+    save_fluxes = 0
     if save_fluxes :
         lateral_flux = mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj)
         exchange_flux = mu_j * Jjv / (2.*Lj)
-        f = open('fluxes_L.dat', 'a')
-        f.write(str(t) + '\t' + str(index) + '\t' + str(lateral_flux) + '\t' + str(exchange_flux) + '\n')
-        f.close()
+        print(lateral_flux, exchange_flux)
+        #f = open('fluxes_L.dat', 'a')
+        #f.write(str(t) + '\t' + str(index) + '\t' + str(lateral_flux) + '\t' + str(exchange_flux) + '\n')
+        #f.close()
         
     return (mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj) - mu_j * (Jjv) / (2.*Lj))/chain.tauv
     
@@ -138,19 +139,21 @@ def func_Nj(index, t, L_vec, N_vec, ell_vec, chain) :
     #print('O-Flux from right is :', Jjs_right)
     
     Jjs = Jjs_left + Jjs_right
+    #Jjs=0
     
     ell_ij, ell_jk = 1, 1
     
     mu_j, nu_j, ca = chain.lumens_dict[index].mu, chain.lumens_dict[index].nu, chain.lumens_dict[index].ca
     Lj, Nj = L_vec[index], N_vec[index]
     
-    save_fluxes = False
+    save_fluxes = 0
     if save_fluxes :
         lateral_flux = 2.*nu_j*Lj*(1. + ca - mu_j*Nj/(Lj*Lj)) 
         exchange_flux = Jjs
-        f = open('fluxes_N.dat', 'a')
-        f.write(str(t) + '\t' + str(index) + '\t' + str(lateral_flux) + '\t' + str(exchange_flux) + '\n')
-        f.close()
+        print('Jjs', index, lateral_flux, exchange_flux)
+        #f = open('fluxes_N.dat', 'a')
+        #f.write(str(t) + '\t' + str(index) + '\t' + str(lateral_flux) + '\t' + str(exchange_flux) + '\n')
+        #f.close()
         
     return (2.*nu_j*Lj*(1. + ca - mu_j*Nj/(Lj*Lj)) -  Jjs)/chain.taus
     

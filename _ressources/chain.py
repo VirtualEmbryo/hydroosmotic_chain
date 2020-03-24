@@ -55,6 +55,10 @@ except :
 
 pow_law = 3.
 
+# Ending conditions
+one_lumen_end = True
+#one_lumen_end = False
+
 # ========================================================================
 # ========================= LOAD CONFIG ==================================
 # ========================================================================
@@ -547,6 +551,7 @@ def system(chain, h=1e-2, recording = False, method = 'rk45', tolerance=1e-10, a
     elif chain.nb_lumens == 1 and 2*chain.lumens_dict[max(chain.lumens_dict.keys())].length >= chain.total_length :
         stop = True
         stop_cause = 'full_size'
+        print('FULL SIZE')
         
     elif chain.nb_lumens <= 1 :
         stop = True
@@ -573,6 +578,26 @@ def make_ellfile(ell_avg, filename, folder) :
     file_ell.write(str(0.)+'\t'+str(ell_avg)+'\n')
     file_ell.close()
 
+def save_distribfile(chain, filename_l, filename_nion, folder) :
+    file_length = open(os.path.join(folder, filename_l), 'a')
+    file_nion = open(os.path.join(folder, filename_nion), 'a')
+    s_length = str(chain.time) + '\t'
+    s_nion = str(chain.time)+ '\t'
+    
+    for k in chain.lumens_dict.keys() :
+        if k != 0 and k != -1 :
+            s_length += str(chain.lumens_dict[k].length) + '\t'
+            s_nion += str(chain.lumens_dict[k].nb_ions) + '\t'
+    s_length += '\n'
+    s_nion += '\n'
+    
+    file_length.write(s_length)
+    file_nion.write(s_nion)
+    
+    file_length.close()
+    file_nion.close()
+    
+
 def save_N(t, Nt, filename) :
     file_N = open(filename, 'a')
     file_N.write(str(t)+'\t'+str(Nt)+'\n')
@@ -582,6 +607,7 @@ def save_ell(t, ellt, filename) :
     file_ell = open(filename, 'a')
     file_ell.write(str(t)+'\t'+str(ellt)+'\n')
     file_ell.close()
+    
     
 # ========================================================================
 # ===========================  RUN  ======================================
@@ -607,7 +633,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
 
     make_Nfile(N0=N0, filename='sim_nlum.dat', folder = dir_name)
     make_ellfile(ell_avg=chain.__calc_ell_avg__(), filename='sim_ell_avg.dat', folder = dir_name)
-    
+    save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
     #if 1 :
     try :
         for i in range(max_step) :
@@ -617,8 +643,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             stop, stop_cause, h = system(chain, h=h, recording = recording, method = solver, tolerance=1e-10, alpha=alpha)
             chain.time += h
             
-            
             # chech topology
+            #if not stop :
             tplg.topology(chain)
     
             # Save the number of lumens
@@ -628,6 +654,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             ellt_avg = chain.__calc_ell_avg__()
             save_ell(chain.time, ellt_avg, os.path.join(dir_name, 'sim_ell_avg.dat'))
             
+            # Save distributions
+            save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
+            
             if stop == 1 :
                 if stop_cause == 'Empty' or stop_cause == 'Fusion' :
                     tplg.topology(chain)
@@ -636,9 +665,10 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 elif stop_cause == 'end_simul':
                     
                     # One lumen left : return 2 ; otherwise return 1
-                    if len(chain.lumens_dict) - 2 == 1 :
+                    if len(chain.lumens_dict) - 2 == 1 and one_lumen_end :
                         end = 2
                         print('End simulation : 1 Lumen left')
+                        break ;
                         
                         #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + end_event + ') is lumen ' + str(int(chain.winner))
                     
@@ -646,11 +676,12 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                         end = 1
                         #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0)
                         print('End simulation : 0 Lumen left')
-                    break ;
+                        break ;
                 
                 elif stop_cause == 'full_size' :
                     print('End simulation : system is fully occupied')
                     end = 11
+                    break ;
 
                 
             if savefig == True and step % nb_frames == 0 :

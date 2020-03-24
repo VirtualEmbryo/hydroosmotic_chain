@@ -102,6 +102,23 @@ def main(args) :
     
     return ;
 
+def distrib(line, nbins=10) :
+    """Calculate the distribution of a configuration given a time step in the shape of a line
+    
+    line = [time, L1, L2, L3, ...]
+    
+    
+    """
+    time = float(line.split('\t')[0])
+    s = line[1:].split('\t')
+    values = []
+    for elem in s :
+        if elem != '' and elem != '\n' :
+            values += [float(elem)]
+    return time, np.histogram(values, bins=nbins)
+
+
+
 if __name__ == '__main__' :
     if len(sys.argv) < 2:
         print('[network_simulation.py] Error: missing args.')
