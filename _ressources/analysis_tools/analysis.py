@@ -102,7 +102,7 @@ def main(args) :
     
     return ;
 
-def distrib(line, nbins=10) :
+def distrib(line, nbins=10, Lmax=None) :
     """Calculate the distribution of a configuration given a time step in the shape of a line
     
     line = [time, L1, L2, L3, ...]
@@ -110,12 +110,19 @@ def distrib(line, nbins=10) :
     
     """
     time = float(line.split('\t')[0])
-    s = line[1:].split('\t')
+    s = line.split('\t')[1:]
     values = []
     for elem in s :
         if elem != '' and elem != '\n' :
-            values += [float(elem)]
-    return time, np.histogram(values, bins=nbins)
+            if float(elem) > 0.1 :
+                if Lmax != None :
+                    if float(elem) <= Lmax :
+                        values += [float(elem)]
+                else :
+                    values += [float(elem)]
+    x, y = np.histogram(values, bins=nbins)
+    y = 0.5*(y[1:]+y[:-1])
+    return time, [x, y]
 
 def batch_window(data, wmin, wmax, nwindow) :
     window = np.logspace(wmin, wmax, nwindow)

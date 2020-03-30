@@ -126,8 +126,8 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig 
                 plt.scatter(chain.lumens_dict[k].pos, 0, color = 'b')
             else :
                 plt.scatter(chain.lumens_dict[k].pos, 0, color = center_color)
-    plt.axis('equal')
-    
+    #plt.axis('equal')
+    axis=False
     if not axis :
         plt.axis('off')
     
