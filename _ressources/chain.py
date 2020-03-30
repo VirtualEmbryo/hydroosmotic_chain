@@ -107,7 +107,8 @@ def load_config(filename) :
         if lumen_type == 'hydroosmotic' :
             my_chain = lc.Osmotic_Chain(nb_lumens = int(config['sim']['nlumens']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
             
-            equilibrium = eval(config['hydroosmotic']['equilibrium'])
+            equilibrium = config['hydroosmotic']['equilibrium']
+            pattern = config['topology']['pattern']
             nions_avg = float(config['hydroosmotic']['nions_avg'])
             nions_std = float(config['hydroosmotic']['nions_std'])
             
@@ -175,7 +176,7 @@ def load_config(filename) :
         
         # Generate the graph
         if lumen_type == 'hydroosmotic' :
-            my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), eps = float(config['topology']['eps']), equilibrium=equilibrium, nions_avg=nions_avg, nions_std=nions_std, ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
+            my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), eps = float(config['topology']['eps']), equilibrium=equilibrium, pattern=pattern, nions_avg=nions_avg, nions_std=nions_std, ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
         elif lumen_type == 'hydraulic' :
             my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), gamma = float(config['hydraulic']['gamma']), ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list, kappa = float(config['hydraulic']['kappa']))
     

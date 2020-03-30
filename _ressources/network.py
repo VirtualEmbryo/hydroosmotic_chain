@@ -125,6 +125,55 @@ def gen_random_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, 
     
     return lumens, bridges, L0
     
+def gen_uniform_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1) :
+    """
+    gen_random_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1)
+    
+        Generate a random configuration
+        
+        Parameters
+        ----------
+        M : int
+            Number of lumens in the chain. 
+            Note that the total number of lumens will be M+2 since there are also the borders, 0 and -1.
+        avg_size : float, optional, default : 0.5
+            Average size of a lumen. Mean of a normal distribution.
+        std_size : float, optional, default : 0.1
+            Standard deviation for the size of a lumen. Standard deviation of a normal distribution.
+        avg_dist : float, optional, default : 1.
+            Average distance between two lumens. Mean of a normal distribution.
+        std_dist : float, optional, default : 0.1
+            Standard deviation for the distance between two lumens. Standard deviation of a normal distribution.
+    
+        dist_to_left : float, optional, default : 0.1
+            Distance between the left-most lumen and the left border.
+        dist_to_right : float, optional, default : 0.1
+            Distance between the right-most lumen and the right border.
+        
+        Returns
+        -------
+        lumens : array
+            Array of lumens
+        bridges : array
+            Array of bridges
+        L0 : float
+            Total length of the chain.
+    
+    
+    """
+    lengths = avg_size*np.ones(shape=M)
+    distances = avg_size*np.ones(shape=M-1)
+    positions = np.zeros(M)
+    positions[0] = lengths[0] + dist_toleft
+    for n in range(1, M) :
+        positions[n] = positions[n-1] + lengths[n-1] + lengths[n] + distances[n-1]
+        
+    L0 = np.sum(distances) + 2*np.sum(lengths) + dist_toleft + dist_toright
+    
+    lumens, bridges = make_network(lengths, positions, L0)
+    
+    return lumens, bridges, L0
+    
 #=========
 
 def calc_ell_list(chain) :

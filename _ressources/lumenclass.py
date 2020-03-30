@@ -311,16 +311,19 @@ class Osmotic_Chain(Chain):
         #self.taus = taus
         #self.tauv = tauv
         
-    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, ca_lumen_list=[], ca_bridge_list=[], equilibrium=True, nions_avg=2, nions_std=1.) :
+    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, ca_lumen_list=[], ca_bridge_list=[], pattern='normal', equilibrium=True, nions_avg=2, nions_std=1.) :
         
-        lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
+        if pattern == 'normal' :
+            lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
+        elif pattern == 'uniform' :            
+            lumens, bridges, self.total_length = net.gen_uniform_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
         for b in range(len(bridges)) :
             self.bridges_dict[int(bridges[b, 0])] = Osmotic_Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=ca_bridge_list[b])
                 
         for m in range(self.nb_lumens+2) :
             nu, mu = net.calc_nuj_list(self.theta), net.calc_muj_list(self.theta)
-            if equilibrium :
+            if equilibrium == 'True' :
                 nion = net.osmotic_equilibrium(L=lumens[m, 1], nu=nu, mu=mu)
             else : 
                 nion = -1
