@@ -213,6 +213,18 @@ class Chain :
             return ellt_avg
         else : return None
         
+    def __calc_L_avg__(self) :
+        L = []
+        if len(self.lumens_dict.keys()) > 2 :
+            for l in self.lumens_dict.keys() :
+                if l != 0 and l != -1 : 
+                    L += [self.lumens_dict[l].length]
+        
+            ellt_avg = np.average(L)
+        
+            return ellt_avg
+        else : return None
+        
     def __L_vec__(self) :
         L_vec = {}
         for j in self.lumens_dict.keys() :
@@ -504,6 +516,18 @@ class Osmotic_Chain(Chain):
             for b in self.bridges_dict.keys() :
                 if self.bridges_dict[b].lumen1 != 0 and self.bridges_dict[b].lumen1 != -1 and self.bridges_dict[b].lumen2 != 0 and self.bridges_dict[b].lumen2 != -1 :
                     L += [self.bridges_dict[b].length]
+        
+            ellt_avg = np.average(L)
+        
+            return ellt_avg
+        else : return None
+        
+    def __calc_L_avg__(self) :
+        L = []
+        if len(self.lumens_dict.keys()) > 2 :
+            for l in self.lumens_dict.keys() :
+                if l != 0 and l != -1 : 
+                    L += [self.lumens_dict[l].length]
         
             ellt_avg = np.average(L)
         

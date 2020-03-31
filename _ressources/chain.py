@@ -578,6 +578,13 @@ def make_ellfile(ell_avg, filename, folder) :
     
     file_ell.write(str(0.)+'\t'+str(ell_avg)+'\n')
     file_ell.close()
+    
+def make_Lfile(L_avg, filename, folder) :
+    file_L = open(os.path.join(folder, filename), 'w')
+    file_L.write('#t\tL(t)\n')
+    
+    file_L.write(str(0.)+'\t'+str(L_avg)+'\n')
+    file_L.close()
 
 def save_distribfile(chain, filename_l, filename_nion, folder) :
     file_length = open(os.path.join(folder, filename_l), 'a')
@@ -614,6 +621,11 @@ def save_ell(t, ellt, filename) :
     file_ell.write(str(t)+'\t'+str(ellt)+'\n')
     file_ell.close()
     
+def save_L(t, Lt, filename) :
+    file_L = open(filename, 'a')
+    file_L.write(str(t)+'\t'+str(Lt)+'\n')
+    file_L.close()
+    
 # ========================================================================
 # ===========================  RUN  ======================================
 # ========================================================================
@@ -638,7 +650,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
 
     make_Nfile(N0=N0, filename='sim_nlum.dat', folder = dir_name)
     make_ellfile(ell_avg=chain.__calc_ell_avg__(), filename='sim_ell_avg.dat', folder = dir_name)
+    make_Lfile(L_avg=chain.__calc_L_avg__(), filename='sim_L_avg.dat', folder = dir_name)
     save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
+    
     #if 1 :
     try :
         for i in range(max_step) :
@@ -655,9 +669,13 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             # Save the number of lumens
             save_N(chain.time, len(chain.lumens_dict)-2, os.path.join(dir_name, 'sim_nlum.dat'))
             
-            # Save bridges lengths
+            # Save bridges average length
             ellt_avg = chain.__calc_ell_avg__()
             save_ell(chain.time, ellt_avg, os.path.join(dir_name, 'sim_ell_avg.dat'))
+            
+            # Save lumens average length
+            Lt_avg = chain.__calc_L_avg__()
+            save_L(chain.time, Lt_avg, os.path.join(dir_name, 'sim_L_avg.dat'))
             
             # Save distributions
             save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
