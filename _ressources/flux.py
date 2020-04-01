@@ -92,7 +92,7 @@ def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     gamma_L = chain.lumens_dict[i_left].gamma
     gamma_R = chain.lumens_dict[i_right].gamma
     
-    ca_L = chain.lumens_dict[i_left].ca    
+    ca_L = chain.lumens_dict[i_left].ca 
     
     return phi_L / (ellt*L_L)*(gamma_R/L_R - gamma_L / L_L) + ca_L
 

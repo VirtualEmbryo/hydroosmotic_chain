@@ -254,7 +254,7 @@ class Lumen :
         
         #self.phi = 0.5*kappa*self.mu / L0**2
         self.kappa = kappa
-        self.phi = 0.5*self.kappa*self.mu
+        self.phi = self.kappa#*self.mu
         
         self.ca = ca
         
