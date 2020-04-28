@@ -105,7 +105,11 @@ def load_config(filename) :
         
         # Chain type generation 
         if lumen_type == 'hydroosmotic' :
-            my_chain = lc.Osmotic_Chain(nb_lumens = int(config['sim']['nlumens']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
+            my_chain = lc.Osmotic_Chain(
+                            nb_lumens = int(config['sim']['nlumens']), 
+                            e0=float(config['sim']['e0']), 
+                            l_merge=float(config['topology']['l_merge']), 
+                            l_dis=float(config['topology']['l_dis']))
             
             equilibrium = config['hydroosmotic']['equilibrium']
             pattern = config['topology']['pattern']
@@ -118,7 +122,11 @@ def load_config(filename) :
             my_chain.tauv = float(config['hydroosmotic']['tauv'])
             
         elif lumen_type == 'hydraulic' :
-            my_chain = lc.Chain(nb_lumens = int(config['sim']['nlumens']), e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
+            my_chain = lc.Chain(
+                nb_lumens = int(config['sim']['nlumens']), 
+                e0=float(config['sim']['e0']), 
+                l_merge=float(config['topology']['l_merge']), 
+                l_dis=float(config['topology']['l_dis']))
             
             my_chain.tau = float(config['hydraulic']['tau'])
             #my_chain.kappa = float(config['hydraulic']['kappa'])
@@ -176,9 +184,23 @@ def load_config(filename) :
         
         # Generate the graph
         if lumen_type == 'hydroosmotic' :
-            my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), eps = float(config['topology']['eps']), equilibrium=equilibrium, pattern=pattern, nions_avg=nions_avg, nions_std=nions_std, ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
+            my_chain.__gen_network_lumen_object__(
+                avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), 
+                avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), 
+                dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), 
+                eps = float(config['topology']['eps']), 
+                equilibrium=equilibrium, 
+                pattern=pattern, 
+                nions_avg=nions_avg, nions_std=nions_std, 
+                ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
         elif lumen_type == 'hydraulic' :
-            my_chain.__gen_network_lumen_object__(avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), gamma = float(config['hydraulic']['gamma']), ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list, kappa = float(config['hydraulic']['kappa']))
+            my_chain.__gen_network_lumen_object__(
+                avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), 
+                avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), 
+                dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), 
+                gamma = float(config['hydraulic']['gamma']), 
+                ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list, 
+                kappa = float(config['hydraulic']['kappa']))
     
     if lumen_type == 'hydroosmotic' :
         #my_chain.xis = chis*my_chain.bridges_dict[1].length
@@ -187,6 +209,8 @@ def load_config(filename) :
             average_length_bridges = np.average([my_chain.bridges_dict[k].length for k in my_chain.bridges_dict.keys()])
             my_chain.xis = chis*average_length_bridges
             my_chain.xiv = chiv*average_length_bridges
+            
+        my_chain.leaks = eval(config['hydroosmotic']['leaks'])
             
         #else :
         #    my_chain.xis = chis*float(config['topology']['avg_dist'])
@@ -209,14 +233,14 @@ def load_config(filename) :
 # ======================== Runge-Kutta ===================================
 # ========================================================================
 
-def calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=0) :
+def calc_new_timestep(h, error, tolerance, secure=0.8, cst_tstep=0) :
 
     if cst_tstep :
         return h
     else :
         if error == 0. :
             #print('Error !', error)
-            return 1.
+            return h*secure
         else :
             if error > tolerance :
                 s = secure*(tolerance / error)**(0.2)
@@ -369,6 +393,9 @@ def rk45_step(t0, chain, h, alpha) :
             ### FINAL
             K = {j: (K1[j]+2.*K2[j]+2.*K3[j]+K4[j])/6. for j in chain.lumens_dict.keys()}
             Q = {j: (Q1[j]+2.*Q2[j]+2.*Q3[j]+Q4[j])/6. for j in chain.lumens_dict.keys()}
+            
+            ### Test if configuration is allowed
+            repeat, index_L_list, index_ell_list = test_DeltaK(L_vec, ell_vec, K, chain)
         
         elif chain.lumen_type == 'hydraulic' :
             ### RK4 - Step 1
@@ -390,16 +417,17 @@ def rk45_step(t0, chain, h, alpha) :
             if chain.lumen_type == 'hydroosmotic' :
                 Q = {j: (Q1[j]+2.*Q2[j]+2.*Q3[j]+Q4[j])/6. for j in chain.lumens_dict.keys()}
             
-        ### Test if configuration is allowed
-        repeat, index = test_DeltaK(L_vec, K)
+            ### Test if configuration is allowed
+            repeat, index_L_list, index_ell_list = test_DeltaK(L_vec, ell_vec, K, chain)
+            
         count = 0
         
         if repeat :
             count += 1
             h = 0.5*h
-            chain.events += 'ERROR Time : ' + str(chain.time) + ' : length(s) of lumen(s) ' + str(index) + ' is negative. Time step is divided.\n'
+            chain.events += 'ERROR Time : ' + str(chain.time) + ' : length(s) of lumen(s) ' + str(index_L_list) + ' is negative. Time step is divided.\n'
             
-        if count >= 10 : print('More than 10 trials without convergence. There might be a problem.')
+            if count >= 10 : print('More than '+str(count)+' trials without convergence. There might be a problem.')
     
     
     # UPDATE CHAIN
@@ -460,6 +488,7 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
             
             ### Test if configuration is allowed
             repeat, index_L_list, index_ell_list = test_DeltaK(L_vec, ell_vec, Kz, chain)
+            
         elif chain.lumen_type == 'hydraulic' :
             ### RK4 - Step 1
             K1 = calc_K_i(t0, h, L_vec, ell_vec, chain)
@@ -497,7 +526,7 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
             h = 0.5*h
             chain.events += 'ERROR Time : ' + str(chain.time) + ' : length(s) of lumen(s) ' + str(index_L_list) + ' or bridge(s) ' + str(index_ell_list) + ' is negative. Time step is divided.\n'
         
-        if count >= 10 : print('More than 10 trials without convergence. There might be a problem.')
+            if count >= 10 : print('More than '+str(count)+' trials without convergence. There might be a problem.')
     
     # UPDATE CHAIN
     for j in chain.lumens_dict.keys() :
@@ -549,7 +578,7 @@ def system(chain, h=1e-2, recording = False, method = 'rk45', tolerance=1e-10, a
         stop = True
         stop_cause = 'Empty_ions'
         
-    elif chain.nb_lumens == 1 and 2*chain.lumens_dict[max(chain.lumens_dict.keys())].length >= chain.total_length :
+    elif chain.nb_lumens == 1 and np.abs(2*chain.lumens_dict[max(chain.lumens_dict.keys())].length - chain.total_length) < chain.l_merge :
         stop = True
         stop_cause = 'full_size'
         print('FULL SIZE')
@@ -610,7 +639,6 @@ def save_distribfile(chain, filename_l, filename_nion, folder) :
         file_nion.write(s_nion)
         file_nion.close()
 
-
 def save_N(t, Nt, filename) :
     file_N = open(filename, 'a')
     file_N.write(str(t)+'\t'+str(Nt)+'\n')
@@ -653,8 +681,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     make_Lfile(L_avg=chain.__calc_L_avg__(), filename='sim_L_avg.dat', folder = dir_name)
     save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
     
-    #if 1 :
-    try :
+    if 1 :
+    #try :
         for i in range(max_step) :
             step += 1
             # make a step
@@ -663,8 +691,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             chain.time += h
             
             # check topology
-            #if not stop :
-            tplg.topology(chain)
+            if stop_cause != 'full_size' :
+                tplg.topology(chain)
     
             # Save the number of lumens
             save_N(chain.time, len(chain.lumens_dict)-2, os.path.join(dir_name, 'sim_nlum.dat'))
@@ -724,6 +752,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 print('\n\nEnd simulation : max step reached')
                 tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
         
+        
         # Last step
         if i == max_step-1 :    # reached maximum step
             end = 10
@@ -734,15 +763,15 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
         save_data = recording
         if save_data :
             tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=False)
-    #elif 0 :
-    except RuntimeWarning :
+    elif 0 :
+    #except RuntimeWarning :
         # RuntimeWarning is raised only in the flux.py library
         # If a RuntimeWarning exception occurs, it is raised as an exception.
         tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, erase=False)
         print('\nSimulation stopped before the end, flow error.')
         end = 0
-    #else :
-    except :
+    else :
+    #except :
         tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, erase=False)
         print('\nSimulation stopped before the end...')
         end = 0

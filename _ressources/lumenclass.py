@@ -337,10 +337,14 @@ class Osmotic_Chain(Chain):
             nu, mu = net.calc_nuj_list(self.theta), net.calc_muj_list(self.theta)
             if equilibrium == 'True' :
                 nion = net.osmotic_equilibrium(L=lumens[m, 1], nu=nu, mu=mu)
-            else : 
-                nion = -1
-                while nion <= 0 :
-                    nion = np.random.normal(nions_avg, nions_std)
+            else :
+                if int(lumens[m, 0]) != 0 and int(lumens[m, 0]) != -1 :
+                    nion = -1
+                    while nion <= 0 :
+                        nion = np.random.normal(nions_avg, nions_std)
+                else : 
+                    nion = 0.
+                    
             self.lumens_dict[int(lumens[m, 0])] = Osmotic_Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], init_nb_ions=nion, theta=self.theta, eps=eps, ca = ca_lumen_list[m])
                     
         self.nmax = max(self.lumens_dict.keys())
@@ -427,6 +431,7 @@ class Osmotic_Chain(Chain):
         cp_chain.tauv = self.tauv
         cp_chain.xis = self.xis
         cp_chain.xiv = self.xiv
+        cp_chain.leaks = self.leaks
         
         return cp_chain
         

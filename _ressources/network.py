@@ -263,6 +263,7 @@ def gen_osmotic_equilibrium(L_list, M, nu_list, mu_list) :
     for m in range(M) :
         #N_list[m] = L_list[m]**2 / (2.*nu_list[m]*L_list[m]*mu_list[m])
         N_list[m] = osmotic_equilibrium(L_list[m], nu_list[m], mu_list[m])
+        #print(m, L_list[m])
     #print(N_list)
     return N_list
 

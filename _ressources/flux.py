@@ -118,14 +118,6 @@ def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
     Lj, Nj = L_vec[index], N_vec[index]
 
     ell_ij, ell_jk = 1, 1
-    save_fluxes = 0
-    if save_fluxes :
-        lateral_flux = mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj)
-        exchange_flux = mu_j * Jjv / (2.*Lj)
-        print(lateral_flux, exchange_flux)
-        #f = open('fluxes_L.dat', 'a')
-        #f.write(str(t) + '\t' + str(index) + '\t' + str(lateral_flux) + '\t' + str(exchange_flux) + '\n')
-        #f.close()
         
     return (mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj) - mu_j * (Jjv) / (2.*Lj))/chain.tauv
     
@@ -133,6 +125,7 @@ def func_Nj(index, t, L_vec, N_vec, ell_vec, chain) :
     # CALCULATE THE FLUXES
     i, k = net.find_neighbors(index, chain.bridges_dict)
     #print(index, ' has neighbors ', i, ' (left) and ', k, ' (right)')
+
     Jjs_left  = func_JLs(i_left=i, i_right=index, L_vec=L_vec, N_vec=N_vec, ell_vec=ell_vec, chain=chain)
     Jjs_right = func_JRs(i_left=index, i_right=k, L_vec=L_vec, N_vec=N_vec, ell_vec=ell_vec, chain=chain)
     #print('O-Flux from left is  :', Jjs_left)
@@ -145,23 +138,14 @@ def func_Nj(index, t, L_vec, N_vec, ell_vec, chain) :
     
     mu_j, nu_j, ca = chain.lumens_dict[index].mu, chain.lumens_dict[index].nu, chain.lumens_dict[index].ca
     Lj, Nj = L_vec[index], N_vec[index]
-    
-    save_fluxes = 0
-    if save_fluxes :
-        lateral_flux = 2.*nu_j*Lj*(1. + ca - mu_j*Nj/(Lj*Lj)) 
-        exchange_flux = Jjs
-        print('Jjs', index, lateral_flux, exchange_flux)
-        #f = open('fluxes_N.dat', 'a')
-        #f.write(str(t) + '\t' + str(index) + '\t' + str(lateral_flux) + '\t' + str(exchange_flux) + '\n')
-        #f.close()
         
     return (2.*nu_j*Lj*(1. + ca - mu_j*Nj/(Lj*Lj)) -  Jjs)/chain.taus
     
 ### OSMOTIC FLUXES
 def func_JLs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
-    if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
-        return 0.
-    
+    if chain.leaks == False : 
+        if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
+            return 0.
     b = net.find_bridge(i_left, i_right, chain)
     
     ellt = ell_vec[b]
@@ -174,15 +158,15 @@ def func_JLs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     
     ca_LR = chain.bridges_dict[b].ca
     
-    dC_L = func_C_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L)
-    dC_R = func_C_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R)
+    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
+    dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
     
     return chis*ellt/L0 * ((dC_R-ca_LR)*np.cosh(1./chis) - (dC_L-ca_LR)) / np.sinh(1./chis)
     
 def func_JRs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
-    if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
-        return 0.
-    
+    if chain.leaks == False : 
+        if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
+            return 0.
     b = net.find_bridge(i_left, i_right, chain)
     
     ellt = ell_vec[b]
@@ -195,14 +179,16 @@ def func_JRs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     
     ca_LR = chain.bridges_dict[b].ca
     
-    dC_L = func_C_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L)
-    dC_R = func_C_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R)
+    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
+    dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
+    
     return chis*ellt/L0 * ((dC_L-ca_LR)*np.cosh(1./chis) - (dC_R-ca_LR)) / np.sinh(1./chis)
 
 ### HYDRAULIC FLUXES
 def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
-    if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
-        return 0.
+    if chain.leaks == False : 
+        if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
+            return 0.
     
     b = net.find_bridge(i_left, i_right, chain)
     
@@ -219,12 +205,12 @@ def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     
     ca_LR = chain.bridges_dict[b].ca
     
-    dC_L = func_C_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L)
-    dC_R = func_C_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R)
+    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
+    dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
     
     
-    P_L  = func_P_j(Lj=L_vec[i_left], eps_j=eps_L, Ltot=L0)
-    P_R  = func_P_j(Lj=L_vec[i_right], eps_j=eps_R, Ltot=L0)
+    P_L  = func_P_j(Lj=L_vec[i_left], eps_j=eps_L, Ltot=L0, index=i_left)
+    P_R  = func_P_j(Lj=L_vec[i_right], eps_j=eps_R, Ltot=L0, index=i_right)
     
     la = lam(-0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     mb = mu(0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
@@ -232,8 +218,9 @@ def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     return chiv*ellt/L0 * ((P_R-mb)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_L-la)/np.sinh(1./chiv) - mb)
        
 def func_JRv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
-    if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
-        return 0.
+    if chain.leaks == False : 
+        if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
+            return 0.
     
     b = net.find_bridge(i_left, i_right, chain)
     
@@ -249,13 +236,15 @@ def func_JRv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     eps_R = chain.lumens_dict[i_left].eps
     
     ca_LR = chain.bridges_dict[b].ca
+    #print(i_left, L_vec[i_left], N_vec[i_left])
+    #print(i_right, L_vec[i_right], N_vec[i_right])
+
+    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
+    dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
+    #print(dC_L, dC_R)
     
-    dC_L = func_C_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L)
-    dC_R = func_C_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R)
-    
-    
-    P_L  = func_P_j(Lj=L_vec[i_left], eps_j=eps_L, Ltot=L0)
-    P_R  = func_P_j(Lj=L_vec[i_right], eps_j=eps_R, Ltot=L0)
+    P_L  = func_P_j(Lj=L_vec[i_left], eps_j=eps_L, Ltot=L0, index=i_left)
+    P_R  = func_P_j(Lj=L_vec[i_right], eps_j=eps_R, Ltot=L0, index=i_right)
     
     la = lam(-0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     mb = mu(0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
@@ -310,9 +299,9 @@ def I_2_plus_v2(x, Xv, Xs) :
     
     return Xv*Xs*(np.exp(x/Xv)*(Xv*cpx - Xs*spx) - np.exp(-0.5/Xv)*Xv)/ ( (Xv-Xs)*(Xv+Xs) )
 
-def func_C_j(Nj, Lj, mu_j) :
+def func_deltaC_j(Nj, Lj, mu_j, index) :
     """
-    func_C_j(Nj, Lj, mu_j)
+    func_deltaC_j(Nj, Lj, mu_j)
     
         Calculate the concentration of lumen j.
     
@@ -327,12 +316,16 @@ def func_C_j(Nj, Lj, mu_j) :
     
         Returns
         -------
-        Cj : float
+        delta Cj : float
             Value of the concentration in lumen j.
     """
-    return mu_j * Nj / (Lj*Lj)
+    if index != 0 and index != -1 :
+        # delta C
+        return mu_j * Nj / (Lj*Lj) - 1.
+    else : 
+        return 0.
     
-def func_P_j(Lj, eps_j, Ltot) :
+def func_P_j(Lj, eps_j, Ltot, index) :
     """
     func_P_j(Lj, eps_j, Ltot)
     
@@ -352,4 +345,8 @@ def func_P_j(Lj, eps_j, Ltot) :
         Pj : float
             Value of the pressure in lumen j.
     """
-    return Ltot*eps_j / Lj
+    if index != 0 and index != -1 :
+        return Ltot*eps_j / Lj
+    else : 
+        #print('Leaks')
+        return 0.

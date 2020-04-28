@@ -110,10 +110,13 @@ def profile(x, chain, theta=np.pi/3., h0=0.1) :
                 h_d[i] = calc_height_dw(x[i], L_list[k], theta, h0, pos_x[k])
     return h_u, h_d
 
-def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', lw = 2, contour_color='k', center_color='r') :
-    
+def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
+    #number = int(savename[-11:-4])
     h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
     plt.suptitle('t = ' + "{:5.5f}".format(chain.time))
+    #if number==8000 :
+    #    plt.plot(x-2e-3*number, h_d-2e-3*number, linewidth = lw, color = contour_color)
+    #plt.plot(x-2e-3*number, h_u-2e-3*number, linewidth = lw, color = contour_color)
     plt.plot(x, h_d, linewidth = lw, color = contour_color)
     plt.plot(x, h_u, linewidth = lw, color = contour_color)
 
@@ -130,9 +133,14 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig 
     
     if not axis :
         plt.axis('off')
+    #format = 'eps'
+    #savefig = 1
     
+    #print(number)
+    #savename=savename[:-4] + '.eps'
+    #if savefig and number == 8000 :
     if savefig :
-        plt.savefig(savename)
+        plt.savefig(savename, format=format)
 
     if show : plt.show()
     else : plt.close()
