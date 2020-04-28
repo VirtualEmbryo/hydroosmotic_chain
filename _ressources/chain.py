@@ -679,10 +679,12 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     make_Nfile(N0=N0, filename='sim_nlum.dat', folder = dir_name)
     make_ellfile(ell_avg=chain.__calc_ell_avg__(), filename='sim_ell_avg.dat', folder = dir_name)
     make_Lfile(L_avg=chain.__calc_L_avg__(), filename='sim_L_avg.dat', folder = dir_name)
-    save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
     
-    if 1 :
-    #try :
+    if recording :
+        save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
+    
+    #if 1 :
+    try :
         for i in range(max_step) :
             step += 1
             # make a step
@@ -706,7 +708,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             save_L(chain.time, Lt_avg, os.path.join(dir_name, 'sim_L_avg.dat'))
             
             # Save distributions
-            save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
+            if recording :
+                save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
             
             if stop == 1 :
                 if stop_cause == 'Empty' or stop_cause == 'Fusion' :
@@ -746,7 +749,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 save_data = recording
                 if save_data and frame_reg :
                     #print('save', chain.lumen_type)
-                    tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
+                    #tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
                     
             if step == max_step :
                 print('\n\nEnd simulation : max step reached')
@@ -763,15 +766,15 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
         save_data = recording
         if save_data :
             tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=False)
-    elif 0 :
-    #except RuntimeWarning :
+    #elif 0 :
+    except RuntimeWarning :
         # RuntimeWarning is raised only in the flux.py library
         # If a RuntimeWarning exception occurs, it is raised as an exception.
         tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, erase=False)
         print('\nSimulation stopped before the end, flow error.')
         end = 0
-    else :
-    #except :
+    #else :
+    except :
         tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, erase=False)
         print('\nSimulation stopped before the end...')
         end = 0
