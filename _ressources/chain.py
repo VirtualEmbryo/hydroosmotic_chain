@@ -749,7 +749,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 save_data = recording
                 if save_data and frame_reg :
                     #print('save', chain.lumen_type)
-                    #tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
+                    tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
+                    
                     
             if step == max_step :
                 print('\n\nEnd simulation : max step reached')
