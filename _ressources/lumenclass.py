@@ -8,8 +8,10 @@ if module_path not in sys.path :
 
 try :
     import _ressources.network as net
+    import _ressources.functions as functions
 except :
     import network as net
+    import functions
 # ============================================================
 # =================  Hydraulic Chain  ========================
 # ============================================================
@@ -43,14 +45,16 @@ class Chain :
         lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
         for b in range(len(bridges)) :
-            self.bridges_dict[int(bridges[b, 0])] = Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=ca_bridge_list[b])
+            #self.bridges_dict[int(bridges[b, 0])] = Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=ca_bridge_list[b])
+            self.bridges_dict[int(bridges[b, 0])] = Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=0)
         
         for m in range(self.nb_lumens+2) :
-            if int(lumens[m, 0]) == 0 or int(lumens[m, 0]) == -1 :
+            if int(lumens[m, 0]) == 0 or int(lumens[m, 0]) == -1 or len(ca_lumen_list)==0 :
                 ca = 0.
             else :
                 ca = ca_lumen_list[m]
-            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, gamma=gamma, kappa=kappa, ca = ca)
+            #self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, gamma=gamma, kappa=kappa, ca = ca)
+            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, kappa=kappa, ca = 0)
                     
         self.nmax = max(self.lumens_dict.keys())
         
@@ -70,8 +74,8 @@ class Chain :
         print('Type         : '+str(self.lumen_type))
         print('Total length : '+str(self.total_length))
         print('Current Time : '+str(self.time))
-        print('======= PARAMETERS =======')
-        print('tau : '+str(self.tau))
+        #print('======= PARAMETERS =======')
+        #print('tau : '+str(self.tau))
         #print('kappa : '+str(self.kappa))
         #print('gammma : '+str(self.gamma))
         print('======= LUMENS =======')
@@ -100,9 +104,13 @@ class Chain :
         cp_chain.events = self.events
         cp_chain.merge = self.merge
         
-        cp_chain.tau = self.tau
-        #cp_chain.gamma = self.gamma
-        #cp_chain.kappa = self.kappa
+        #cp_chain.tau = self.tau
+        cp_chain.kappa = self.kappa
+        
+        try :
+            cp_chain.pumping_args = self.pumping_args
+            cp_chain.pumping_func = self.pumping_func
+        except : pass
         
         return cp_chain
         
@@ -145,7 +153,8 @@ class Chain :
         self.rec_br[self.time] = {}
         
         for k in self.lumens_dict.keys() :
-            self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].pos]
+            self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].pos, self.lumens_dict[k].ca]
+            #self.rec[self.time][k] = [self.lumens_dict[k].length, self.lumens_dict[k].pos]
         for b in self.bridges_dict.keys() :
             self.rec_br[self.time][b] = [self.bridges_dict[b].length, self.bridges_dict[b].lumen1, self.bridges_dict[b].lumen2]
             
@@ -158,19 +167,29 @@ class Chain :
         L_i, L_j = self.lumens_dict[i].length, self.lumens_dict[j].length
         mu_i, mu_j = self.lumens_dict[i].mu, self.lumens_dict[j].mu
         area_i, area_j = L_i**2 / mu_i, L_j**2 / mu_j
-        gamma_i, gamma_j = self.lumens_dict[i].gamma, self.lumens_dict[j].gamma
+        
         kappa_i, kappa_j = self.lumens_dict[i].kappa, self.lumens_dict[j].kappa
         ca_i, ca_j = self.lumens_dict[i].ca, self.lumens_dict[j].ca
         
         mu_k = 0.5*(mu_i + mu_j)
         area_k = area_i+area_j
         L_k = np.sqrt(area_k * mu_k)
-        pos_k = (pos_i*area_i + pos_j*area_j) / area_k
-        gamma_k = 0.5*(gamma_i + gamma_j)
-        kappa_k = 0.5*(kappa_i + kappa_j)
-        ca_k = 0.5*(ca_i+ca_j)
         
-        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, gamma=gamma_k, kappa=kappa_k, ca = ca_k)
+        # New position
+        # Given by the center of mass of the merging lumens
+        pos_k = (pos_i*area_i + pos_j*area_j) / area_k
+        
+        kappa_k = 0.5*(kappa_i + kappa_j)
+        
+        #if len(self.pumping_args) > 0 :
+        try :
+            x1, x2 = pos_k - L_, pos_k + L_k
+            ca_k = functions.integrate(self.pumping_func, x1, x2, self.pumping_args)
+        #else :
+        except :
+            ca_k = 0.5*(ca_i+ca_j)
+        
+        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, kappa=kappa_k, ca = ca_k)
         
         # Bridge
         
@@ -238,7 +257,7 @@ class Chain :
         return ell_vec
         
 class Lumen :
-    def __init__(self, index, init_pos, init_length, theta, gamma, kappa, ca=0.) :
+    def __init__(self, index, init_pos, init_length, theta, kappa, ca=0.) :
         self.index = index
         self.init_pos = init_pos
         self.theta = theta
@@ -246,16 +265,11 @@ class Lumen :
         self.length = init_length
         self.pos = self.init_pos
         
-        self.gamma = gamma
-        
         self.__calc_geom_mu__()
         self.__calc_geom_nu__()
         self.__calc_area__()
         
-        #self.phi = 0.5*kappa*self.mu / L0**2
         self.kappa = kappa
-        self.phi = self.kappa#*self.mu
-        
         self.ca = ca
         
     def __update__(self) :
@@ -290,7 +304,7 @@ class Lumen :
         return "Lumen {0} is at position {1:.5f} with length {2:.5f} and pumping {3:.5f}".format(self.index, self.pos, self.length, self.ca)
     
     def __copy__(self) :
-        return Lumen(self.index, self.init_pos, self.length, self.theta, self.gamma, self.kappa, self.ca)
+        return Lumen(self.index, self.init_pos, self.length, self.theta, self.kappa, self.ca)
         
 class Bridge :
     def __init__(self, index, lumen1, lumen2, length, ca=0.) :
@@ -318,10 +332,6 @@ class Osmotic_Chain(Chain):
     def __init__(self, nb_lumens, e0 = 0.1, theta=np.pi/3., l_dis=1e-2, l_merge=1e-2, pbc=False) :
         Chain.__init__(self, nb_lumens, e0 = e0, theta=theta, l_dis=l_dis, l_merge=l_merge, pbc=pbc)
         self.lumen_type = 'hydroosmotic'
-        #self.xis  = xis
-        #self.xiv  = xiv
-        #self.taus = taus
-        #self.tauv = tauv
         
     def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, eps = 1e-3, ca_lumen_list=[], ca_bridge_list=[], pattern='normal', equilibrium=True, nions_avg=2, nions_std=1.) :
         
@@ -331,7 +341,8 @@ class Osmotic_Chain(Chain):
             lumens, bridges, self.total_length = net.gen_uniform_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
         for b in range(len(bridges)) :
-            self.bridges_dict[int(bridges[b, 0])] = Osmotic_Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=ca_bridge_list[b])
+            #self.bridges_dict[int(bridges[b, 0])] = Osmotic_Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=ca_bridge_list[b])
+            self.bridges_dict[int(bridges[b, 0])] = Osmotic_Bridge(index=int(bridges[b, 0]), lumen1=bridges[b, 1], lumen2=bridges[b, 2], length=bridges[b, 3], ca=0)
                 
         for m in range(self.nb_lumens+2) :
             nu, mu = net.calc_nuj_list(self.theta), net.calc_muj_list(self.theta)
@@ -345,7 +356,8 @@ class Osmotic_Chain(Chain):
                 else : 
                     nion = 0.
                     
-            self.lumens_dict[int(lumens[m, 0])] = Osmotic_Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], init_nb_ions=nion, theta=self.theta, eps=eps, ca = ca_lumen_list[m])
+            #self.lumens_dict[int(lumens[m, 0])] = Osmotic_Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], init_nb_ions=nion, theta=self.theta, eps=eps, ca = ca_lumen_list[m])
+            self.lumens_dict[int(lumens[m, 0])] = Osmotic_Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], init_nb_ions=nion, theta=self.theta, eps=eps, ca = 0)
                     
         self.nmax = max(self.lumens_dict.keys())
         
@@ -423,9 +435,10 @@ class Osmotic_Chain(Chain):
         cp_chain.events = self.events
         cp_chain.merge = self.merge
         
-        cp_chain.pumping = self.pumping
-        #if cp_chain.pumping != None :
-               #then copy...
+        try :
+            cp_chain.pumping_args = self.pumping_args
+            cp_chain.pumping_func = self.pumping_func
+        except : pass
         
         cp_chain.taus = self.taus
         cp_chain.tauv = self.tauv
@@ -556,7 +569,14 @@ class Osmotic_Chain(Chain):
         
         nb_ions_k = self.lumens_dict[i].nb_ions + self.lumens_dict[j].nb_ions
         eps_k = 0.5*(self.lumens_dict[i].eps + self.lumens_dict[j].eps)
-        ca_k = 0.5*(self.lumens_dict[i].ca + self.lumens_dict[j].ca)
+        
+        #if len(self.pumping_args) > 0 :
+        try :
+            x1, x2 = pos_k - L_, pos_k + L_k
+            ca_k = functions.integrate(self.pumping_func, x1, x2, self.pumping_args)
+        #else :
+        except :
+            ca_k = 0.5*(self.lumens_dict[i].ca+self.lumens_dict[j].ca)
         
         self.lumens_dict[k] = Osmotic_Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, init_nb_ions=nb_ions_k, eps=eps_k, ca=ca_k)
         

@@ -10,6 +10,7 @@ python3 chain.py config.conf [options]
     -h : help
     -v : print the steps
     -r : do not register at frames
+    -e : register the last event (useful for fate diagram)
 
 
     Contains
@@ -38,6 +39,7 @@ try :
     import _ressources.topology as tplg
     import _ressources.lumenclass as lc
     import _ressources.configreader as configreader
+    import _ressources.functions as functions
 except :
     import flux as flux
     import tools as tools
@@ -45,6 +47,7 @@ except :
     import topology as tplg
     import lumenclass as lc
     import configreader
+    import functions
 
 try : 
     import matplotlib.pyplot as plt
@@ -63,6 +66,89 @@ one_lumen_end = True
 # ========================= LOAD CONFIG ==================================
 # ========================================================================
 
+def set_pumping(chain, ca_lumen_list, ca_bridge_list) :
+    for b in chain.bridges_dict.keys() :
+            chain.bridges_dict[b].ca = ca_bridge_list[b]
+        
+    for k in chain.lumens_dict.keys() :
+        if k != 0 and k != -1 :
+            chain.lumens_dict[k].ca = ca_lumen_list[k]
+
+def calc_pumping(chain, func, args):
+    for k in chain.lumens_dict.keys() :
+        if k != 0 and k != -1 :
+            pos, length = chain.lumens_dict[k].pos, chain.lumens_dict[k].length
+            x1, x2 = pos - length, pos + length
+            chain.lumens_dict[k].ca = functions.integrate(func, x1, x2, args)
+            
+    for b in chain.bridges_dict.keys() :
+        i, j = chain.bridges_dict[b].lumen1, chain.bridges_dict[b].lumen2
+        x1, x2 = chain.lumens_dict[i].pos, chain.lumens_dict[j].pos
+        chain.bridges_dict[b].ca = functions.integrate(func, x1, x2, args)
+
+def gen_pumping_list(chain, config, nb_lumens) :
+    Ltot = chain.total_length
+    func = config['pumping']['pattern']
+    chain.pumping_func = func
+    
+    if func == 'constant' :
+        chain.pumping_args = {'value' : float(config['pumping']['param_1'])}
+        calc_pumping(chain, func, chain.pumping_args)
+    # ========== RANDOM ============
+    elif func == 'normal' :
+        lum_avg, lum_std = float(config['pumping']['param_1']), float(config['pumping']['param_2'])
+        br_avg, br_std = float(config['pumping']['param_3']), float(config['pumping']['param_4'])
+        
+        ca_bridge_list = [np.random.normal(br_avg, br_std) for b in range(nb_lumens+1)]
+        ca_lumen_list = [np.random.normal(lum_avg, lum_std) for m in range(nb_lumens+2)]
+        
+        set_pumping(chain, ca_lumen_list, ca_bridge_list)
+    
+    elif func == 'normal_abs' :
+        lum_avg, lum_std = float(config['pumping']['param_1']), float(config['pumping']['param_2'])
+        br_avg, br_std = float(config['pumping']['param_3']), float(config['pumping']['param_4'])
+        
+        ca_bridge_list = [np.abs(np.random.normal(br_avg, br_std)) for b in range(nb_lumens+1)]
+        ca_lumen_list = [np.abs(np.random.normal(lum_avg, lum_std)) for m in range(nb_lumens+2)]
+        
+        set_pumping(chain, ca_lumen_list, ca_bridge_list)
+    
+    elif func == 'uniform' :
+        lum_low, lum_high = float(config['pumping']['param_1']), float(config['pumping']['param_2'])
+        br_low, br_high = float(config['pumping']['param_3']), float(config['pumping']['param_4'])
+        
+        
+        ca_bridge_list = [np.random.uniform(br_low, br_high) for b in range(nb_lumens+1)]
+        ca_lumen_list = [np.random.uniform(lum_low, lum_high) for m in range(nb_lumens+2)]
+
+        set_pumping(chain, ca_lumen_list, ca_bridge_list)
+        
+    # ========== FUNCTIONS ============
+    elif func == 'linear' :
+        chain.pumping_args = {'slope' : float(config['pumping']['param_1']), 'offset' : float(config['pumping']['param_2'])}
+        calc_pumping(chain, func, chain.pumping_args)
+            
+    elif func == 'gaussian' :
+        chain.pumping_args = {'amp' : float(config['pumping']['param_1']), 'mu' : float(config['pumping']['param_2'])*Ltot, 'sigma' : float(config['pumping']['param_3'])*Ltot}
+        calc_pumping(chain, func, chain.pumping_args)
+
+    elif func == 'rectangular' :
+        chain.pumping_args = {'fmin' : float(config['pumping']['param_1']), 'fmax' : float(config['pumping']['param_2']), 'start' : float(config['pumping']['param_3'])*Ltot, 'stop' : float(config['pumping']['param_4'])*Ltot}
+        calc_pumping(chain, func, chain.pumping_args)
+        
+    elif func == 'sigmoide' :
+        chain.pumping_args = {'fmin' : float(config['pumping']['param_1']), 'fmax' : float(config['pumping']['param_2']), 'slope' : float(config['pumping']['param_3'])/Ltot, 'inflexion_point' : float(config['pumping']['param_4'])*Ltot}
+        calc_pumping(chain, func, chain.pumping_args)
+    
+    else :
+        my_chain.pumping = 'None'
+        ca_lumen_list = [0. for i in range(nb_lumens+2)]
+        ca_bridge_list = [0. for i in range(nb_lumens+1)]
+        set_pumping(chain, ca_lumen_list, ca_bridge_list)
+        
+    #return ca_lumen_list, ca_bridge_list
+    return;
+    
 def load_config(filename) :
     global my_chain
     
@@ -72,7 +158,8 @@ def load_config(filename) :
     path = config['sim']['path']
     
     lumen_type = config['sim']['chain_type']
-        
+    
+    # ======================== IMPORT CONFIG FROM PATH ===============
     # Import pre-written configuration if specified
     if len(path) > 0 :
         print('Import config from ' + path)      
@@ -92,12 +179,11 @@ def load_config(filename) :
             my_chain = lc.Chain(nb_lumens = len(lumens_array)-2, e0=float(config['sim']['e0']), l_merge=float(config['topology']['l_merge']), l_dis=float(config['topology']['l_dis']))
             my_chain.__import_config__(lumens_array, bridges_array, eps = float(config['topology']['eps']), kappa=float(config['topology']['kappa']))
             
-            my_chain.tau = float(config['hydraulic']['tau'])
             my_chain.kappa = float(config['hydraulic']['kappa'])
-            my_chain.gamma = float(config['hydraulic']['gamma'])
             
         my_chain.pumping = config['pumping']['pattern']
         
+    # ======================== IMPORT PARAMETERS =====================   
     else :
         # Seed
         if conf.has_option('sim', 'seed') and len(config['sim']['seed']) > 0 :
@@ -128,61 +214,9 @@ def load_config(filename) :
                 l_merge=float(config['topology']['l_merge']), 
                 l_dis=float(config['topology']['l_dis']))
             
-            my_chain.tau = float(config['hydraulic']['tau'])
-            #my_chain.kappa = float(config['hydraulic']['kappa'])
-            #my_chain.gamma = float(config['hydraulic']['gamma'])
-            
-        # Pumping
-        if conf.has_option('pumping', 'pattern') : 
-            my_chain.pumping = config['pumping']['pattern']
-            if config['pumping']['pattern'] == 'normal' :
-                
-                br_avg, br_std = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
-                lum_avg, lum_std = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
-                
-                ca_bridge_list = [np.random.normal(br_avg, br_std) for b in range(my_chain.nb_lumens+1)]
-                ca_lumen_list = [np.random.normal(lum_avg, lum_std) for m in range(my_chain.nb_lumens+2)]
-            
-            elif config['pumping']['pattern'] == 'normal_abs' :
-                
-                br_avg, br_std = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
-                lum_avg, lum_std = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
-                
-                ca_bridge_list = [np.abs(np.random.normal(br_avg, br_std)) for b in range(my_chain.nb_lumens+1)]
-                ca_lumen_list = [np.abs(np.random.normal(lum_avg, lum_std)) for m in range(my_chain.nb_lumens+2)]
-            
-            elif config['pumping']['pattern'] == 'uniform' :
-                br_low, br_high = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
-                lum_low, lum_high = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
-                
-                ca_bridge_list = [np.random.uniform(br_low, br_high) for b in range(my_chain.nb_lumens+1)]
-                ca_lumen_list = [np.random.uniform(lum_low, lum_high) for m in range(my_chain.nb_lumens+2)]
-                
-            elif config['pumping']['pattern'] == 'gradient' :
-                br_1, br_2 = float(config['pumping']['bridge_1']), float(config['pumping']['bridge_2'])
-                lum_1, lum_2 = float(config['pumping']['lumen_1']), float(config['pumping']['lumen_2'])
-                
-                ca_bridge_list = [b*(br_2 - br_1)/(my_chain.nb_lumens+1) + br_1 for b in range(my_chain.nb_lumens+1)]
-                ca_lumen_list = [m*(lum_2 - lum_1)/(my_chain.nb_lumens+2) + lum_1 for m in range(my_chain.nb_lumens+2)]
-            
-            elif config['pumping']['pattern'] == 'constant' :
-                br_1 = float(config['pumping']['bridge_1'])
-                lum_1 = float(config['pumping']['lumen_1'])
-                
-                ca_bridge_list = [br_1 for b in range(my_chain.nb_lumens+1)]
-                ca_lumen_list = [lum_1 for m in range(my_chain.nb_lumens+2)]
-            
-            else :
-                my_chain.pumping = 'None'
-                ca_lumen_list = [0. for i in range(my_chain.nb_lumens+2)]
-                ca_bridge_list = [0. for i in range(my_chain.nb_lumens+1)]
-                
-        else :
-            my_chain.pumping = 'None'
-            ca_lumen_list = [0. for i in range(my_chain.nb_lumens+2)]
-            ca_bridge_list = [0. for i in range(my_chain.nb_lumens+1)]
+            my_chain.kappa = float(config['hydraulic']['kappa'])
         
-        # Generate the graph
+        # GENERATE THE GRAPH
         if lumen_type == 'hydroosmotic' :
             my_chain.__gen_network_lumen_object__(
                 avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), 
@@ -191,33 +225,31 @@ def load_config(filename) :
                 eps = float(config['topology']['eps']), 
                 equilibrium=equilibrium, 
                 pattern=pattern, 
-                nions_avg=nions_avg, nions_std=nions_std, 
-                ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list)
+                nions_avg=nions_avg, nions_std=nions_std)
+                
         elif lumen_type == 'hydraulic' :
             my_chain.__gen_network_lumen_object__(
                 avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), 
                 avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), 
                 dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), 
-                gamma = float(config['hydraulic']['gamma']), 
-                ca_lumen_list=ca_lumen_list, ca_bridge_list=ca_bridge_list, 
                 kappa = float(config['hydraulic']['kappa']))
-    
+                
+        # PUMPING
+        if conf.has_option('pumping', 'pattern') : 
+            my_chain.pumping = config['pumping']['pattern']
+            
+            gen_pumping_list(my_chain, config, my_chain.nb_lumens)            
+            
+        else :
+            my_chain.pumping = 'None'
+
     if lumen_type == 'hydroosmotic' :
-        #my_chain.xis = chis*my_chain.bridges_dict[1].length
-        #my_chain.xiv = chiv*my_chain.bridges_dict[1].length
-        if 1 :
-            average_length_bridges = np.average([my_chain.bridges_dict[k].length for k in my_chain.bridges_dict.keys()])
-            my_chain.xis = chis*average_length_bridges
-            my_chain.xiv = chiv*average_length_bridges
+        ###average_length_bridges = np.average([my_chain.bridges_dict[k].length for k in my_chain.bridges_dict.keys()])
+        average_length_bridges = my_chain.__calc_ell_avg__()
+        my_chain.xis = chis*average_length_bridges
+        my_chain.xiv = chiv*average_length_bridges
             
         my_chain.leaks = eval(config['hydroosmotic']['leaks'])
-            
-        #else :
-        #    my_chain.xis = chis*float(config['topology']['avg_dist'])
-        #    my_chain.xiv = chiv*float(config['topology']['avg_dist'])
-        
-        #my_chain.xis = chis*my_chain.total_length
-        #my_chain.xiv = chiv*my_chain.total_length
     
     # Merging
     if conf.has_option('topology', 'merge') :
@@ -227,6 +259,7 @@ def load_config(filename) :
         my_chain.merge = True
         
     #print(my_chain)
+        
     return config, my_chain
 
 # ========================================================================
@@ -683,8 +716,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     if recording :
         save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
     
-    #if 1 :
-    try :
+    if 1 :
+    #try :
+        tplg.topology(chain)
         for i in range(max_step) :
             step += 1
             # make a step
@@ -721,25 +755,26 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                     # One lumen left : return 2 ; otherwise return 1
                     if len(chain.lumens_dict) - 2 == 1 and one_lumen_end :
                         end = 2
-                        print('End simulation : 1 Lumen left')
-                        break ;
-                        
                         #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + end_event + ') is lumen ' + str(int(chain.winner))
+                        print('End simulation : 1 Lumen left')
+                        
+                        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
+                        break ;
                     
                     elif len(chain.lumens_dict) - 2 == 0 :
                         end = 1
                         #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0)
                         print('End simulation : 0 Lumen left')
+                        
+                        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
                         break ;
                 
                 elif stop_cause == 'full_size' :
-                    print('End simulation : system is fully occupied')
                     end = 11
+                    print('End simulation : system is fully occupied')
+                    
+                    tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
                     break ;
-
-                
-            if savefig == True and step % nb_frames == 0 :
-                tools.plot_profile(x, chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
     
             if step % nb_frames == 0 :
                 if state_simul :
@@ -751,9 +786,28 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                     #print('save', chain.lumen_type)
                     tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=True)
                     
-                    
+            
+            if savefig == True and step % nb_frames == 0 :
+                ### TO CHANGE
+                x = np.linspace(0., chain.total_length, 1001)
+                index=step-1
+                output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
+                pos, ca_l = output[:, 0], output[:, 1]
+
+                tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
+                
+                ###tools.plot_profile(x, chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png')) ### TO CHANGE
+                        
             if step == max_step :
                 print('\n\nEnd simulation : max step reached')
+                ### TO CHANGE
+                x = np.linspace(0., chain.total_length, 1001)
+                index=step-1
+                output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
+                pos, ca_l = output[:, 0], output[:, 1]
+
+                tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
+                
                 tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name)
         
         
@@ -762,20 +816,36 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             end = 10
             
         if savefig :
-            tools.plot_profile(x, chain, centers=False, lw=1.5, show=0, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))        
+            ### TO CHANGE
+            x = np.linspace(0., chain.total_length, 1001)
+            index=step-1
+            output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
+            pos, ca_l = output[:, 0], output[:, 1]
+
+            tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
+            
+            ###tools.plot_profile(x, chain, centers=False, lw=1.5, show=0, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))        
 
         save_data = recording
         if save_data :
-            tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=False)
-    #elif 0 :
-    except RuntimeWarning :
+            ### TO CHANGE
+            x = np.linspace(0., chain.total_length, 1001)
+            index=step-1
+            output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
+            pos, ca_l = output[:, 0], output[:, 1]
+
+            tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
+            
+            ###tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, chain_type = chain.lumen_type, erase=False)
+    elif 0 :
+    #except RuntimeWarning :
         # RuntimeWarning is raised only in the flux.py library
         # If a RuntimeWarning exception occurs, it is raised as an exception.
         tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, erase=False)
         print('\nSimulation stopped before the end, flow error.')
         end = 0
-    #else :
-    except :
+    else :
+    #except :
         tools.save_recording(chain, filename='sim_all.dat', filename_events='events.log', folder=dir_name, erase=False)
         print('\nSimulation stopped before the end...')
         end = 0
@@ -788,8 +858,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
         
 def main(configname, args) :
     # Initialize arguments
-    state_simul = False
-    frame_reg = True
+    state_simul = False                 # Output print on the terminal (time, n of lumens, etc.)
+    frame_reg = True                    # Register the state of the chain when step == frame
+    rec_last_event = False              # Record the last event
     
     # Import arguments from the console (if any...)
     if len(args) > 0 :
@@ -798,6 +869,8 @@ def main(configname, args) :
                 state_simul = True
             if arg.startswith('-r') :
                 frame_reg = False
+            if arg.startswith('-e') :
+                rec_lastevent = True
     
     # Load Configuration file
     config, my_chain = load_config(configname)
@@ -842,14 +915,15 @@ def main(configname, args) :
 
         else :
             os.mkdir(pics_dirname)
-        print(pics_dirname)
-        x = np.linspace(0, my_chain.total_length, 1001)
-        tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(0).zfill(8)+'.png'))
+        ### TO CHANGE
+        ###x = np.linspace(0, my_chain.total_length, 1001)
+        ###tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(0).zfill(8)+'.png'))
     
     # Run Simulation
     end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname, frame_reg=frame_reg)
     # Add the ending event to events.log
-    tools.write_ending_event(end, chain=my_chain, eventfilename='events.log')
+    if rec_last_event : 
+        tools.write_ending_event(end, chain=my_chain, eventfilename='events.log')
     
     # Save the final chain in the end_chain.dat file
     my_chain.__save__(os.path.join(dir_name, 'end_chain.dat'))

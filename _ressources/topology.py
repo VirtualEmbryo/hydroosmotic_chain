@@ -34,7 +34,6 @@ def topology(chain) :
                 
     
     chain.nb_lumens = len(chain.lumens_dict)-2
-    #print(chain.time, chain.nb_lumens)
 
 # ========================================================================
 # =========================== Delete =====================================

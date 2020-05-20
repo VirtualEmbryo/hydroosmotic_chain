@@ -1,5 +1,16 @@
 import numpy as np
 import os
+import sys
+
+module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
+if module_path not in sys.path :
+    sys.path.append(module_path)
+
+try :
+    import _ressources.functions as functions
+except :
+    import functions
+    
 try :
     import matplotlib.pyplot as plt
     
@@ -110,40 +121,54 @@ def profile(x, chain, theta=np.pi/3., h0=0.1) :
                 h_d[i] = calc_height_dw(x[i], L_list[k], theta, h0, pos_x[k])
     return h_u, h_d
 
-def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
+def plot_profile(x, chain, ca, pos, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
+    fig, ax = plt.subplots(2, 1, figsize=(6, 8))
+    
+    try :
+        args = functions.get_parameters(chain.pumping_args, chain.pumping_func)
+        fpump = functions.calc_func(x, chain.pumping_func, args, chain.total_length*2)
+        ax[0].plot(x, fpump)
+        ax[0].plot(pos, ca, marker='o', linewidth=0)
+        ax[0].set_ylim(-np.max(fpump)*5e-2, np.max(fpump)*1.1)
+    except : pass
+    
     #number = int(savename[-11:-4])
     h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
-    plt.suptitle('t = ' + "{:5.5f}".format(chain.time))
+    ###ax[1].suptitle('t = ' + "{:5.5f}".format(chain.time))
     #if number==8000 :
     #    plt.plot(x-2e-3*number, h_d-2e-3*number, linewidth = lw, color = contour_color)
     #plt.plot(x-2e-3*number, h_u-2e-3*number, linewidth = lw, color = contour_color)
-    plt.plot(x, h_d, linewidth = lw, color = contour_color)
-    plt.plot(x, h_u, linewidth = lw, color = contour_color)
+    ax[1].plot(x, h_d, linewidth = lw, color = contour_color)
+    ax[1].plot(x, h_u, linewidth = lw, color = contour_color)
 
     xmin, xmax = np.min(x), np.max(x)
-    plt.xlim(xmin, xmax)
+    ax[1].set_xlim(xmin, xmax)
+    ax[0].set_xlim(xmin, xmax)
     
     if centers :
         for k in list(chain.lumens_dict.keys()) :
             if k == 0 or k == -1 :
-                plt.scatter(chain.lumens_dict[k].pos, 0, color = 'b')
+                ax[1].scatter(chain.lumens_dict[k].pos, 0, color = 'b')
             else :
-                plt.scatter(chain.lumens_dict[k].pos, 0, color = center_color)
-    plt.axis('equal')
+                ax[1].scatter(chain.lumens_dict[k].pos, 0, color = center_color)
+    #ax[1].axis('equal')
     
     if not axis :
-        plt.axis('off')
+        ax[1].axis('off')
     #format = 'eps'
     #savefig = 1
     
     #print(number)
     #savename=savename[:-4] + '.eps'
     #if savefig and number == 8000 :
+    
     if savefig :
         plt.savefig(savename, format=format)
 
     if show : plt.show()
     else : plt.close()
+
+
 
 # ========================================================================
 # ============================ Savings ===================================
@@ -168,16 +193,24 @@ def clear_folder(dir_name) :
         else :
             print('Error : directory ' + dir_name + ' not cleaned...')
             return 2
-            
+
+# ========================================================================
+# ======================== SAVE FUNCTIONS ================================
+# ========================================================================
+         
+def save_events(chain, folder='', filename_events='events.log') :
+    events_file = open(os.path.join(folder, filename_events), 'a+')
+    events_file.write(chain.events)
+    events_file.close()
+    return ;
+               
 def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='', chain_type='hydroosmotic', erase=True) :
     try :
         os.mkdir(folder)
     except : pass
 
     # Saving events
-    events_file = open(os.path.join(folder, filename_events), 'a+')
-    events_file.write(chain.events)
-    events_file.close()
+    save_events(chain, folder=folder, filename_events='events.log')
     
     # Save qties
     file_all = open(os.path.join(folder, filename), 'a+')
@@ -194,7 +227,9 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
                     if chain_type == 'hydroosmotic' :
                         s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\t' + str(chain.rec[t][n][2])+ '\n'
                     elif chain_type == 'hydraulic' :
-                        s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\n'
+                        ### TO CHANGE
+                        s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\t' + str(chain.rec[t][n][2]) +'\n'
+                        #s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) +'\n'
                 else :
                     #print(chain.rec[t][n][0], chain.rec[t][n][1])
                     print(chain.rec[t].keys())
@@ -220,7 +255,7 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
     chain.events = ''
 
 # ========================================================================
-# ========================== Events file =================================
+# ============================ EVENTS ====================================
 # ========================================================================
 
 def check_slope(index, t0, t1, rec) :
@@ -259,7 +294,6 @@ def check_ending_event(chain) :
             ev = 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (M) is lumen ' + str(w)
             return ev
             
-    
 def write_ending_event(end, chain, eventfilename) :
     f = open(eventfilename, 'a+')
     if end == 0 :
@@ -298,6 +332,7 @@ def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
 
     L_a = {}
     p_a = {}
+    c_a = {} ### TO CHANGE
     
     if hydroosmotic : N_a = {}
     
@@ -306,6 +341,7 @@ def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
         if t not in L_a.keys() :
             L_a[t] = {}
             p_a[t] = {}
+            c_a[t] = {} ### TO CHANGE
             if hydroosmotic : N_a[t] = {}
             
         
@@ -315,9 +351,11 @@ def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
             p_a[t][int(dat[i, 0])] = dat[i, 4]
         else :
             p_a[t][int(dat[i, 0])] = dat[i, 3]
+            c_a[t][int(dat[i, 0])] = dat[i, 4] ### TO CHANGE
 
     L_array = np.zeros(( len(L_a.keys()), Nmax+1 ))
     p_array = np.zeros(( len(p_a.keys()), Nmax+1 ))
+    c_array = np.zeros(( len(c_a.keys()), Nmax+1 )) ### TO CHANGE
     if hydroosmotic : N_array = np.zeros(( len(N_a.keys()), Nmax+1 ))
 
     step = -1
@@ -325,24 +363,28 @@ def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
         step += 1
         L_temp = [k]
         p_temp = [k]
+        c_temp = [k] ### TO CHANGE
         if hydroosmotic : N_temp = [k]
         for j in range(1, Nmax+1) :
             if j in L_a[k].keys() :
                 L_temp += [L_a[k][j]]
                 p_temp += [p_a[k][j]]
+                c_temp += [c_a[k][j]] ### TO CHANGE
                 if hydroosmotic : N_temp += [N_a[k][j]]
             else :
                 L_temp += [None]
                 p_temp += [None]
+                c_temp += [None] ### TO CHANGE
                 if hydroosmotic : N_temp += [None]
         L_array[step] = np.array(L_temp)
         if hydroosmotic : N_array[step] = np.array(N_temp)
         p_array[step] = np.array(p_temp)
+        c_array[step] = np.array(c_temp) ### TO CHANGE
     
     if hydroosmotic : 
         return L_array, N_array, p_array
     else :
-        return L_array, p_array
+        return L_array, p_array, c_array ### TO CHANGE
     
 def load_brfile(filename, skiprows=0, max_rows=0) :
     time = []
@@ -473,6 +515,7 @@ def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename=
     plt.show()
     
 def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 4), x_logscale=False, y_logscale=False, show_meanlength = True, xlim=[], nbins=0) :
+    #fig, ax = plt.subplots(1, 2, figsize=figsize)
     fig, ax = plt.subplots(1, 2, figsize=figsize)
 
     tmin, tmax = 0., 0.4
@@ -509,7 +552,7 @@ def plot_evolution_hydraulic(L, ell, show_totalarea=False, savefig=False, savena
     ax[1].grid()
     ax[1].set_xlabel('Time [s]')
     if len(xlim) > 0 :
-        ax[1].set_xlim(xlim[0], xlim[1])
+        ax[1].set_xlim(xlim[0], xlim[1])        
     
     if nbins > 0 :
         ax[0].locator_params(nbins=nbins)
@@ -538,5 +581,3 @@ def get_winner(filename) :
     f.close()
     return w
     
-    
-#
