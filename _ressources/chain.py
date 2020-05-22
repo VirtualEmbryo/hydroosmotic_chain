@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # chain.py
 
 """
@@ -911,7 +911,7 @@ def main(configname, args) :
         pics_dirname = os.path.join(dir_name,'pics')
         
         if os.path.isdir(pics_dirname) :
-            if os.listdir(pics_dirname) > 0 :
+            if len(os.listdir(pics_dirname)) > 0 :
                 print('Remove files from ' + pics_dirname)
                 for elem in os.listdir(pics_dirname) :
                     os.remove(os.path.join(pics_dirname, elem))
