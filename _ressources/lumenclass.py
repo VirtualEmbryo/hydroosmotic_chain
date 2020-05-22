@@ -256,6 +256,19 @@ class Chain :
             ell_vec[b] = float(self.bridges_dict[b].length)
         return ell_vec
         
+    def __bridge_pos__(self, b) :
+        lumen1 = self.bridges_dict[b].lumen1
+        lumen2 = self.bridges_dict[b].lumen2
+        pos1 = self.lumens_dict[lumen1].pos
+        pos2 = self.lumens_dict[lumen2].pos
+        return 0.5*(pos1+pos2)
+        
+    def __bridges_pos_list__(self) :
+        pos = {}
+        for b in self.bridges_dict.keys() :
+            pos[b] = self.__bridge_pos__(b)
+        return pos
+        
 class Lumen :
     def __init__(self, index, init_pos, init_length, theta, kappa, ca=0.) :
         self.index = index

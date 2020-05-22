@@ -2,6 +2,10 @@ import numpy as np
 import os
 import sys
 
+import time
+import getpass
+import socket
+
 module_path = os.path.abspath(os.path.join('..', 'chain_lumen/'))
 if module_path not in sys.path :
     sys.path.append(module_path)
@@ -16,6 +20,38 @@ try :
     
 except : 
     pass
+
+# ========================================================================
+# ============================= Log file =================================
+# ========================================================================
+
+def write_log(outdir, confname, args) :
+    
+    username = getpass.getuser()
+    hostname = socket.gethostname()
+    start_time = time.ctime()
+    end_time = time.ctime()
+    
+    f = open(os.path.join(outdir, 'log.txt'), 'w')
+    
+    f.write('username : ' + str(username) + '\n')
+    f.write('hostname : ' + str(hostname) + '\n')
+    f.write('wdir : ' + str(outdir) + '\n')
+    f.write('\n')
+    f.write('config   : '  + str(os.path.join(outdir, confname)) + '\n')
+    if len(args) > 0 :
+        f.write('args     : ' + str(args) + '\n')
+    else :
+        f.write('args     : [-]' + '\n')
+    f.write('\n')
+    f.write('start    : ' + str(start_time) + '\n')
+    
+def add_end_time(outdir, end) :
+    end_time = time.ctime()
+    f = open(os.path.join(outdir, 'log.txt'), 'a')
+    
+    f.write('status   : ' + str(end) + '\n')
+    f.write('stop     : ' + str(end_time))
     
 
 # ========================================================================
@@ -167,7 +203,6 @@ def plot_profile(x, chain, ca, pos, theta=np.pi/3., centers = True, axis = True,
 
     if show : plt.show()
     else : plt.close()
-
 
 
 # ========================================================================

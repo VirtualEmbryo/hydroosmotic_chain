@@ -5,8 +5,8 @@ from scipy.integrate import quad
 def linear(x, slope=1., offset=0.) :
     return slope*x+offset
     
-def gauss(x, amp=1., mu=0., sigma=1.) :
-    return amp*exp(-(x-mu)**2/sigma**2)
+def gauss(x, amp=1., mu=0., sigma=1., fmin=0.) :
+    return amp*exp(-(x-mu)**2/sigma**2) + fmin
     
 def rectangular(x, fmax=1., fmin=0., start=0., stop=1.) :
     """
@@ -46,9 +46,11 @@ def get_parameters(args, func) :
         try : sigma = args['sigma']
         except : sigma = 1.
         
-        return amp, mu, sigma
+        try : fmin = args['fmin']
+        except : fmin = 0.
         
-        
+        return amp, mu, sigma, fmin
+                
     elif func == 'rectangular' :
         try : fmin = args['fmin']
         except : fmin = 0.
@@ -92,8 +94,8 @@ def calc_func(x, func, args, Ltot=0) :
         return linear(x, slope, offset)
     
     elif func == 'gaussian' :
-        amp, mu, sigma = args
-        return gauss(x, amp, mu, sigma)
+        amp, mu, sigma, fmin = args
+        return gauss(x, amp, mu, sigma, fmin)
         
     elif func == 'rectangular' :
         fmin, fmax, start, stop = args
@@ -116,8 +118,8 @@ def integrate(func, x1, x2, args={}) :
         res, err = quad(func=lambda x, slope=slope, offset=offset : slope*x+offset, a=x1, b=x2)
         
     elif func == 'gaussian' :
-        amp, mu, sigma = get_parameters(args, func)
-        res, err = quad(func=lambda x, amp=amp, mu=mu, sigma=sigma : amp*exp(-(x-mu)**2/sigma**2), a=x1, b=x2)
+        amp, mu, sigma, fmin = get_parameters(args, func)
+        res, err = quad(func=lambda x, amp=amp, mu=mu, sigma=sigma, fmin=fmin : amp*exp(-(x-mu)**2/sigma**2)+fmin, a=x1, b=x2)
         
     elif func == 'rectangular' :
         fmin, fmax, start, stop = get_parameters(args, func)
