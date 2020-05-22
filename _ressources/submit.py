@@ -138,7 +138,6 @@ def main(args):
 
 
 if __name__ == "__main__" :
-    print(sys.argv)
     if len(sys.argv)<1 or sys.argv[1] == 'help' :
         print(__doc__)
     else :
