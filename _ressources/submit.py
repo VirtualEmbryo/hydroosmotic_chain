@@ -71,8 +71,9 @@ def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_ta
     
     f.write('./job$SLURM_ARRAY_TASK_ID\n')
     f.close()
-
-    os.chmod(filename, 0700)
+    
+    # 448 = -rwx------
+    os.chmod(filename, 448)
     return filename
 
 def write_s(confname, script, dirconfig, n) :
@@ -83,7 +84,8 @@ def write_s(confname, script, dirconfig, n) :
     f.write('cd ' + dirconfig + '\n')
     f.write(script + ' ' + confname)
     
-    os.chmod(filename, 0700)
+    # 448 = -rwx------
+    os.chmod(filename, 448)
     return 0
 
 def main(args):
@@ -133,15 +135,14 @@ def main(args):
         
     submitname = 'sim.sh'
     subprocess.call([subcmd + ' ' + submitname], shell = True)
-    return ;
 
 
 if __name__ == "__main__" :
-
+    print(sys.argv)
     if len(sys.argv)<1 or sys.argv[1] == 'help' :
         print(__doc__)
     else :
-	if len(sys.argv) > 1 :
+        if len(sys.argv) > 1 :
             args = sys.argv[1:]
             main(args=args)
         else :
