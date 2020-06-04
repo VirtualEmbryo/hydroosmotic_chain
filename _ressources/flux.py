@@ -18,7 +18,6 @@ except :
     import topology
     import functions
     
-    
 # ========================================================================
 # =========================== Warnings ===================================
 # ========================================================================
@@ -197,7 +196,7 @@ def func_JLs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     ellt = ell_vec[b]                                       # length of the bridge b
     
     # Total length between i and j (for normalization of the flux)
-    L0   = L_vec[i_right] + L_vec[i_left] + ellt
+    #L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
     # SCREENING RATIOS
     chis  = chain.xis / ellt
@@ -219,7 +218,8 @@ def func_JLs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
     dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
     
-    return chis*ellt/L0 * ((dC_R-ca_LR)*np.cosh(1./chis) - (dC_L-ca_LR)) / np.sinh(1./chis)
+    #return chis*ellt/L0 * ((dC_R-ca_LR)*np.cosh(1./chis) - (dC_L-ca_LR)) / np.sinh(1./chis) ### THIS IS WRONG
+    return chain.xis * ((dC_R-ca_LR)*np.cosh(1./chis) - (dC_L-ca_LR)) / np.sinh(1./chis)
     
 def func_JRs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     if chain.leaks == False : 
@@ -229,7 +229,7 @@ def func_JRs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     ellt = ell_vec[b]                                       # length of the bridge b
     
     # Total length between i and j (for normalization of the flux)
-    L0   = L_vec[i_right] + L_vec[i_left] + ellt
+    #L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
     # SCREENING RATIO
     chis  = chain.xis / ellt
@@ -248,10 +248,11 @@ def func_JRs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     except :
         ca_LR = chain.bridges_dict[b].ca
     
-    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
+    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)   
     dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
     
-    return chis*ellt/L0 * ((dC_L-ca_LR)*np.cosh(1./chis) - (dC_R-ca_LR)) / np.sinh(1./chis)
+    #return chis*ellt/L0 * ((dC_L-ca_LR)*np.cosh(1./chis) - (dC_R-ca_LR)) / np.sinh(1./chis) ### THIS IS WRONG
+    return chain.xis * ((dC_L-ca_LR)*np.cosh(1./chis) - (dC_R-ca_LR)) / np.sinh(1./chis)
 
 ### HYDRAULIC FLUXES
 def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
@@ -263,7 +264,7 @@ def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     ellt = ell_vec[b]                                       # length of the bridge b
     
     # Total length between i and j (for normalization of the flux)
-    L0   = L_vec[i_right] + L_vec[i_left] + ellt
+    #L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
     # SCREENING RATIOS
     chis  = chain.xis / ellt
@@ -289,13 +290,14 @@ def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
     
     
-    P_L  = func_P_j(Lj=L_vec[i_left], eps_j=eps_L, Ltot=L0, index=i_left)
-    P_R  = func_P_j(Lj=L_vec[i_right], eps_j=eps_R, Ltot=L0, index=i_right)
+    P_L  = func_deltaP_j(Lj=L_vec[i_left], eps_j=eps_L, index=i_left)
+    P_R  = func_deltaP_j(Lj=L_vec[i_right], eps_j=eps_R, index=i_right)
     
     la = lam(-0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     mb = mu(0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     
-    return chiv*ellt/L0 * ((P_R-mb)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_L-la)/np.sinh(1./chiv) - mb)
+    #return chiv*ellt/L0 * ((P_R-mb)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_L-la)/np.sinh(1./chiv) - mb) ### THIS IS WRONG
+    return chain.xiv * ((P_R-mb)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_L-la)/np.sinh(1./chiv) - mb)
        
 def func_JRv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     if chain.leaks == False : 
@@ -306,7 +308,7 @@ def func_JRv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     ellt = ell_vec[b]                                           # length of the bridge b
     
     # Total length between i and j (for normalization of the flux)
-    L0   = L_vec[i_right] + L_vec[i_left] + ellt
+    #L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
     # SCREENING RATIOS
     chis  = chain.xis / ellt
@@ -328,16 +330,17 @@ def func_JRv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     except :
         ca_LR = chain.bridges_dict[b].ca
 
-    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
-    dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
+    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left) ###
+    dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right) ###
     
-    P_L  = func_P_j(Lj=L_vec[i_left], eps_j=eps_L, Ltot=L0, index=i_left)
-    P_R  = func_P_j(Lj=L_vec[i_right], eps_j=eps_R, Ltot=L0, index=i_right)
+    P_L  = func_deltaP_j(Lj=L_vec[i_left], eps_j=eps_L, index=i_left) ###
+    P_R  = func_deltaP_j(Lj=L_vec[i_right], eps_j=eps_R, index=i_right) ###
     
     la = lam(-0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     mb = mu(0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     
-    return chiv*ellt/L0 * ((P_L-la)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_R-mb)/np.sinh(1./chiv) - la)
+    #return chiv*ellt/L0 * ((P_L-la)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_R-mb)/np.sinh(1./chiv) - la) ### THIS IS WRONG
+    return chain.xiv * ((P_L-la)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_R-mb)/np.sinh(1./chiv) - la)
 
 ### FUNCTIONS
 def lam(x, chiv, chis, dC_L, dC_R, ca_LR) :
@@ -414,9 +417,9 @@ def func_deltaC_j(Nj, Lj, mu_j, index) :
     else : 
         return 0.
     
-def func_P_j(Lj, eps_j, Ltot, index) :
+def func_deltaP_j(Lj, eps_j, index) :
     """
-    func_P_j(Lj, eps_j, Ltot)
+    func_deltaP_j(Lj, eps_j)
     
         Calculate the pressure of lumen j.
     
@@ -426,8 +429,6 @@ def func_P_j(Lj, eps_j, Ltot, index) :
             Length of the lumen j
         eps_j : float
             Osmotic vs hydraulic pressure term for lumen j
-        Ltot : float
-            Total length of the system.
     
         Returns
         -------
@@ -435,7 +436,7 @@ def func_P_j(Lj, eps_j, Ltot, index) :
             Value of the pressure in lumen j.
     """
     if index != 0 and index != -1 :
-        return Ltot*eps_j / Lj
+        return eps_j / Lj - 1.
     else : 
         #print('Leaks')
         return 0.

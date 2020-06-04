@@ -834,9 +834,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
             pos, ca_l = output[:, 0], output[:, 1]
 
-            tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
+            ###tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
             
-            ###tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, chain_type = chain.lumen_type, erase=False)
+            tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, chain_type = chain.lumen_type, erase=False)
     elif 0 :
     #except RuntimeWarning :
         # RuntimeWarning is raised only in the flux.py library

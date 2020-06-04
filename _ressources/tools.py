@@ -156,7 +156,46 @@ def profile(x, chain, theta=np.pi/3., h0=0.1) :
                 h_d[i] = calc_height_dw(x[i], L_list[k], theta, h0, pos_x[k])
     return h_u, h_d
 
-def plot_profile(x, chain, ca, pos, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
+def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
+    fig, ax = plt.subplots(1, 1, figsize=(6, 8))
+    
+    #number = int(savename[-11:-4])
+    h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
+    ###ax[1].suptitle('t = ' + "{:5.5f}".format(chain.time))
+    #if number==8000 :
+    #    plt.plot(x-2e-3*number, h_d-2e-3*number, linewidth = lw, color = contour_color)
+    #plt.plot(x-2e-3*number, h_u-2e-3*number, linewidth = lw, color = contour_color)
+    ax.plot(x, h_d, linewidth = lw, color = contour_color)
+    ax.plot(x, h_u, linewidth = lw, color = contour_color)
+
+    xmin, xmax = np.min(x), np.max(x)
+    ax.set_xlim(xmin, xmax)
+    ax.set_xlim(xmin, xmax)
+    
+    if centers :
+        for k in list(chain.lumens_dict.keys()) :
+            if k == 0 or k == -1 :
+                ax.scatter(chain.lumens_dict[k].pos, 0, color = 'b')
+            else :
+                ax.scatter(chain.lumens_dict[k].pos, 0, color = center_color)
+    ax.axis('equal')
+    
+    if not axis :
+        ax.axis('off')
+    #format = 'eps'
+    #savefig = 1
+    
+    #print(number)
+    #savename=savename[:-4] + '.eps'
+    #if savefig and number == 8000 :
+    
+    if savefig :
+        plt.savefig(savename, format=format)
+
+    if show : plt.show()
+    else : plt.close()
+
+def plot_profile2(x, chain, ca, pos, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
     fig, ax = plt.subplots(2, 1, figsize=(6, 8))
     
     try :
@@ -203,7 +242,6 @@ def plot_profile(x, chain, ca, pos, theta=np.pi/3., centers = True, axis = True,
     if show : plt.show()
     else : plt.close()
 
-
 # ========================================================================
 # ============================ Savings ===================================
 # ========================================================================
@@ -238,7 +276,7 @@ def save_events(chain, folder='', filename_events='events.log') :
     events_file.close()
     return ;
                
-def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='', chain_type='hydroosmotic', erase=True) :
+def save_recording(chain, filename='sim_all.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='', chain_type='hydroosmotic', erase=True) :
     try :
         os.mkdir(folder)
     except : pass
@@ -259,11 +297,14 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
             if n != 0 and n != -1 :
                 if 1 :
                     if chain_type == 'hydroosmotic' :
+                        # Save : index, time, length, nb_ions, pos
                         s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\t' + str(chain.rec[t][n][2])+ '\n'
                     elif chain_type == 'hydraulic' :
                         ### TO CHANGE
-                        s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\t' + str(chain.rec[t][n][2]) +'\n'
-                        #s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) +'\n'
+                        ###s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) + '\t' + str(chain.rec[t][n][2]) +'\n'
+                        ### CORRECT : 
+                        # Save : index, time, length, pos
+                        s   += str(n) + '\t' + str(t) + '\t' + str(chain.rec[t][n][0]) + '\t' + str(chain.rec[t][n][1]) +'\n'
                 else :
                     #print(chain.rec[t][n][0], chain.rec[t][n][1])
                     print(chain.rec[t].keys())
@@ -275,6 +316,7 @@ def save_recording(chain, filename='sim.dat', filename_bridges='sim_bridges.dat'
         sb = ''
         
         for b in chain.rec_br[t].keys() :
+            # Save : index, time, length, lumen1, lumen2
             sb += str(b) + '\t' + str(t) + '\t' + str(chain.rec_br[t][b][0]) + '\t'+ str(chain.rec_br[t][b][1]) + '\t'+ str(chain.rec_br[t][b][2]) +'\n'
             
         file_br.write(sb)    
@@ -366,7 +408,7 @@ def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
 
     L_a = {}
     p_a = {}
-    c_a = {} ### TO CHANGE
+    #c_a = {} ### TO CHANGE
     
     if hydroosmotic : N_a = {}
     
@@ -375,7 +417,7 @@ def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
         if t not in L_a.keys() :
             L_a[t] = {}
             p_a[t] = {}
-            c_a[t] = {} ### TO CHANGE
+            #c_a[t] = {} ### TO CHANGE
             if hydroosmotic : N_a[t] = {}
             
         
@@ -385,11 +427,11 @@ def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
             p_a[t][int(dat[i, 0])] = dat[i, 4]
         else :
             p_a[t][int(dat[i, 0])] = dat[i, 3]
-            c_a[t][int(dat[i, 0])] = dat[i, 4] ### TO CHANGE
+            #c_a[t][int(dat[i, 0])] = dat[i, 4] ### TO CHANGE
 
     L_array = np.zeros(( len(L_a.keys()), Nmax+1 ))
     p_array = np.zeros(( len(p_a.keys()), Nmax+1 ))
-    c_array = np.zeros(( len(c_a.keys()), Nmax+1 )) ### TO CHANGE
+    #c_array = np.zeros(( len(c_a.keys()), Nmax+1 )) ### TO CHANGE
     if hydroosmotic : N_array = np.zeros(( len(N_a.keys()), Nmax+1 ))
 
     step = -1
@@ -397,28 +439,28 @@ def load_file(filename, skiprows=0, max_rows=0, hydroosmotic = True) :
         step += 1
         L_temp = [k]
         p_temp = [k]
-        c_temp = [k] ### TO CHANGE
+        #c_temp = [k] ### TO CHANGE
         if hydroosmotic : N_temp = [k]
         for j in range(1, Nmax+1) :
             if j in L_a[k].keys() :
                 L_temp += [L_a[k][j]]
                 p_temp += [p_a[k][j]]
-                c_temp += [c_a[k][j]] ### TO CHANGE
+                #c_temp += [c_a[k][j]] ### TO CHANGE
                 if hydroosmotic : N_temp += [N_a[k][j]]
             else :
                 L_temp += [None]
                 p_temp += [None]
-                c_temp += [None] ### TO CHANGE
+                #c_temp += [None] ### TO CHANGE
                 if hydroosmotic : N_temp += [None]
         L_array[step] = np.array(L_temp)
         if hydroosmotic : N_array[step] = np.array(N_temp)
         p_array[step] = np.array(p_temp)
-        c_array[step] = np.array(c_temp) ### TO CHANGE
+        #c_array[step] = np.array(c_temp) ### TO CHANGE
     
     if hydroosmotic : 
         return L_array, N_array, p_array
     else :
-        return L_array, p_array, c_array ### TO CHANGE
+        return L_array, p_array#, c_array ### TO CHANGE
     
 def load_brfile(filename, skiprows=0, max_rows=0) :
     time = []
