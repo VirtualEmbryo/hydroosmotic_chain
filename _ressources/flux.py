@@ -436,7 +436,8 @@ def func_deltaP_j(Lj, eps_j, index) :
             Value of the pressure in lumen j.
     """
     if index != 0 and index != -1 :
-        return eps_j / Lj - 1.
+        #return eps_j / Lj - 1.          # Correction 4/05/2020
+        return eps_j / Lj               # Before the correction
     else : 
         #print('Leaks')
         return 0.
