@@ -745,7 +745,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             save_L(chain.time, Lt_avg, os.path.join(dir_name, 'sim_L_avg.dat'))
             
             # Save distributions
-            if rec_distrib :
+            if rec_distrib and step % nb_frames == 0 :
                 save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
             
             if stop == 1 :
