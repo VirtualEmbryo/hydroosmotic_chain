@@ -691,7 +691,7 @@ def save_L(t, Lt, filename) :
 # ===========================  RUN  ======================================
 # ========================================================================
 
-def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=True, tolerance=1e-9, solver='rkf45', state_simul=False, pics_dirname='pics', frame_reg=True) :
+def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_name = 'out', recording=False, rec_distrib=False, tolerance=1e-9, solver='rkf45', state_simul=False, pics_dirname='pics', frame_reg=True) :
     """
     
     Returns
@@ -713,11 +713,11 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     make_ellfile(ell_avg=chain.__calc_ell_avg__(), filename='sim_ell_avg.dat', folder = dir_name)
     make_Lfile(L_avg=chain.__calc_L_avg__(), filename='sim_L_avg.dat', folder = dir_name)
     
-    if recording :
+    if rec_distrib :
         save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
     
-    if 1 :
-    #try :
+    #if 1 :
+    try :
         tplg.topology(chain)
         for i in range(max_step) :
             step += 1
@@ -729,6 +729,9 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             # check topology
             if stop_cause != 'full_size' :
                 tplg.topology(chain)
+                
+            # Save events
+            tools.save_events(chain, folder='', filename_events='events.txt')
     
             # Save the number of lumens
             save_N(chain.time, len(chain.lumens_dict)-2, os.path.join(dir_name, 'sim_nlum.dat'))
@@ -742,7 +745,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             save_L(chain.time, Lt_avg, os.path.join(dir_name, 'sim_L_avg.dat'))
             
             # Save distributions
-            if recording :
+            if rec_distrib :
                 save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
             
             if stop == 1 :
@@ -755,98 +758,75 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                     # One lumen left : return 2 ; otherwise return 1
                     if len(chain.lumens_dict) - 2 == 1 and one_lumen_end :
                         end = 2
-                        #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + end_event + ') is lumen ' + str(int(chain.winner))
+                        chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : end. One lumen left.'
+                        #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(chain.winner))
+                        tools.save_events(chain, folder='', filename_events='events.txt')
                         print('End simulation : 1 Lumen left')
                         
-                        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, chain_type = chain.lumen_type, erase=True)
+                        
+                        if recording :
+                            tools.save_recording(chain, filename='sim_all.dat', folder=dir_name, chain_type = chain.lumen_type, erase=frame_reg)#
                         break ;
                     
                     elif len(chain.lumens_dict) - 2 == 0 :
                         end = 1
-                        #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0)
-                        print('End simulation : 0 Lumen left')
+                        chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : empty chain.\n'
+                        tools.save_events(chain, folder='', filename_events='events.txt')
                         
-                        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, chain_type = chain.lumen_type, erase=True)
+                        print('End simulation : 0 Lumen left')
+                        if recording :
+                            tools.save_recording(chain, filename='sim_all.dat', folder=dir_name, chain_type = chain.lumen_type, erase=frame_reg)#
                         break ;
                 
                 elif stop_cause == 'full_size' :
                     end = 11
-                    print('End simulation : system is fully occupied')
+                    chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : full chain.\n'
+                    tools.save_events(chain, folder='', filename_events='events.txt')
                     
-                    tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, chain_type = chain.lumen_type, erase=True)
+                    print('End simulation : system is fully occupied')
+                    tools.save_recording(chain, filename='sim_all.dat', folder=dir_name, chain_type = chain.lumen_type, erase=frame_reg)#
                     break ;
     
             if step % nb_frames == 0 :
+                # Print the state of the chain in terminal
                 if state_simul :
                     print('Step : ', step, ' ; Time : ', "{:4.6f}".format(chain.time), ' ; Nb Lumens : ', len(chain.lumens_dict)-2)
                 
                 # Records the details of the chain
-                save_data = recording
-                if save_data and frame_reg :
+                if recording and frame_reg :
                     #print('save', chain.lumen_type)
-                    tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, chain_type = chain.lumen_type, erase=True)
+                    tools.save_recording(chain, filename='sim_all.dat', folder=dir_name, chain_type = chain.lumen_type, erase=frame_reg)#
                     
             
             if savefig == True and step % nb_frames == 0 :
-                ### TO CHANGE
-                x = np.linspace(0., chain.total_length, 1001)
-                index=step-1
-                output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
-                pos, ca_l = output[:, 0], output[:, 1]
-
-                tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
-                
-                ###tools.plot_profile(x, chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png')) ### TO CHANGE
+                tools.plot_profile(x, chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
                         
             if step == max_step :
+                end = 10
                 print('\n\nEnd simulation : max step reached')
-                ### TO CHANGE
-                x = np.linspace(0., chain.total_length, 1001)
-                index=step-1
-                output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
-                pos, ca_l = output[:, 0], output[:, 1]
-
-                tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
-                
-                tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name)
-        
-        
-        # Last step
-        if i == max_step-1 :    # reached maximum step
-            end = 10
+                chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : max step.\n'
+                tools.save_events(chain, folder='', filename_events='events.txt')
+                if recording :
+                    tools.save_recording(chain, filename='sim_all.dat', folder=dir_name)
             
-        if savefig :
-            ### TO CHANGE
-            x = np.linspace(0., chain.total_length, 1001)
-            index=step-1
-            output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
-            pos, ca_l = output[:, 0], output[:, 1]
-
-            tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
-            
-            ###tools.plot_profile(x, chain, centers=False, lw=1.5, show=0, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))        
-
-        save_data = recording
-        if save_data :
-            ### TO CHANGE
-            x = np.linspace(0., chain.total_length, 1001)
-            index=step-1
-            output = np.array([[chain.lumens_dict[k].pos, chain.lumens_dict[k].ca] for k in chain.lumens_dict.keys() if k != 0 and k!=-1])
-            pos, ca_l = output[:, 0], output[:, 1]
-
-            ###tools.plot_profile(x, chain, ca_l, pos, centers=True, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
-            
-            tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, chain_type = chain.lumen_type, erase=False)
-    elif 0 :
-    #except RuntimeWarning :
+    #elif 0 :
+    except RuntimeWarning :
         # RuntimeWarning is raised only in the flux.py library
         # If a RuntimeWarning exception occurs, it is raised as an exception.
-        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, erase=False)
+        chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : Flow error.\n'
+        tools.save_events(chain, folder='', filename_events='events.txt')
+        
+        if recording :
+            tools.save_recording(chain, filename='sim_all.dat', folder=dir_name, erase=False)
         print('\nSimulation stopped before the end, flow error.')
         end = 0
-    else :
-    #except :
-        tools.save_recording(chain, filename='sim_all.dat', filename_events='events.txt', folder=dir_name, erase=False)
+        
+    #else :
+    except :
+        chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : error occured in integration.\n'
+        tools.save_events(chain, folder='', filename_events='events.txt')
+        if recording :
+            tools.save_recording(chain, filename='sim_all.dat', folder=dir_name, erase=False)
         print('\nSimulation stopped before the end...')
         end = 0
     
@@ -870,7 +850,7 @@ def main(configname, args) :
             if arg.startswith('-r') :
                 frame_reg = False
             if arg.startswith('-e') :
-                rec_lastevent = True
+                rec_last_event = True
     
     # Load Configuration file
     config, my_chain = load_config(configname)
@@ -879,6 +859,7 @@ def main(configname, args) :
     max_step = int(config['integration']['max_step'])
     alpha = float(config['integration']['alpha'])
     recording = eval(config['sim']['recording'])
+    rec_distrib = eval(config['sim']['rec_distrib'])
     tolerance = float(config['integration']['tolerance'])
     nb_frames = int(config['sim']['nb_frames'])
     solver = config['integration']['solver']
@@ -918,15 +899,40 @@ def main(configname, args) :
 
         else :
             os.mkdir(pics_dirname)
-        ### TO CHANGE
-        ###x = np.linspace(0, my_chain.total_length, 1001)
-        ###tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(0).zfill(8)+'.png'))
+        
+        x = np.linspace(0, my_chain.total_length, 1001)
+        tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(0).zfill(8)+'.png'))
+    
+    ### Flux file 
+    #f = open('fluxes.dat', 'w')
+    #f.write('t\tJlat\tJexch\n')
+    #f.close()
     
     # Run Simulation
-    end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname, frame_reg=frame_reg)
+    end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, rec_distrib=rec_distrib, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname, frame_reg=frame_reg)
+    
+
+    ### Classification
     # Add the ending event to events.txt
-    if rec_last_event : 
-        tools.write_ending_event(end, chain=my_chain, eventfilename='events.txt')
+    #if 'classification' not in my_chain.__dict__.keys() :
+    #    my_chain.classification = 'collapse'
+        
+    #print(my_chain.classification)
+    ###
+        
+    if rec_last_event :
+        ### TO REMOVE
+        if 0 : 1
+        #    eventfilename='events.txt'
+        #    fe = open(eventfilename, 'a+')
+        #    if my_chain.classification == 'collapse' :
+        #        fe.write('Time ' + "{:4.6f}".format(my_chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0))
+        #    else :
+        #        fe.write('Time ' + "{:4.6f}".format(my_chain.time) + ' : winner (' + 'C' + ') is lumen ' + str(2))
+        
+        ### TO PUT BACK
+        else :
+            tools.write_ending_event(end, chain=my_chain, eventfilename='events.txt')
     
     # Save the final chain in the end_chain.dat file
     my_chain.__save__(os.path.join(dir_name, 'end_chain.dat'))

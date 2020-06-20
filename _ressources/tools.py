@@ -156,8 +156,8 @@ def profile(x, chain, theta=np.pi/3., h0=0.1) :
                 h_d[i] = calc_height_dw(x[i], L_list[k], theta, h0, pos_x[k])
     return h_u, h_d
 
-def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
-    fig, ax = plt.subplots(1, 1, figsize=(6, 8))
+def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
+    fig, ax = plt.subplots(1, 1)
     
     #number = int(savename[-11:-4])
     h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
@@ -178,6 +178,9 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig 
                 ax.scatter(chain.lumens_dict[k].pos, 0, color = 'b')
             else :
                 ax.scatter(chain.lumens_dict[k].pos, 0, color = center_color)
+                
+    #ax.vlines(x=0., ymin=-1., ymax=1.)
+    #ax.vlines(x=chain.total_length, ymin=-1., ymax=1.)
     ax.axis('equal')
     
     if not axis :
@@ -188,7 +191,7 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = True, savefig 
     #print(number)
     #savename=savename[:-4] + '.eps'
     #if savefig and number == 8000 :
-    
+    plt.suptitle('Time = '+"{:4.4e}".format(chain.time))
     if savefig :
         plt.savefig(savename, format=format)
 
@@ -270,19 +273,20 @@ def clear_folder(dir_name) :
 # ======================== SAVE FUNCTIONS ================================
 # ========================================================================
          
-def save_events(chain, folder='', filename_events='events.log') :
+def save_events(chain, folder='', filename_events='events.txt') :
     events_file = open(os.path.join(folder, filename_events), 'a+')
     events_file.write(chain.events)
     events_file.close()
+    chain.events = ''
     return ;
                
-def save_recording(chain, filename='sim_all.dat', filename_bridges='sim_bridges.dat', filename_events='events.log', folder='', chain_type='hydroosmotic', erase=True) :
+def save_recording(chain, filename='sim_all.dat', filename_bridges='sim_bridges.dat', folder='', chain_type='hydroosmotic', erase=True) :
     try :
         os.mkdir(folder)
     except : pass
 
     # Saving events
-    save_events(chain, folder=folder, filename_events='events.log')
+    #save_events(chain, folder=folder, filename_events='events.txt')###
     
     # Save qties
     file_all = open(os.path.join(folder, filename), 'a+')
@@ -345,6 +349,7 @@ def find_winner(chain) :
     return chain.winner
     
 def find_nmax(array, n)  :
+    """Returns the n-th maximum numbers of a list"""
     return np.sort(np.partition(array, -n)[-n:])
     
 def check_ending_event(chain) :
@@ -354,7 +359,7 @@ def check_ending_event(chain) :
         
     else :
         w = find_winner(chain)
-        tend_array = find_nmax(chain.rec.keys(), 3)
+        tend_array = find_nmax(list(chain.rec.keys()), 3)           # finds the 3 maximum times of rec dict
         try :
             s = check_slope(w, tend_array[0], tend_array[1], chain.rec)
             

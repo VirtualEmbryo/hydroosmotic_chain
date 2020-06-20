@@ -156,6 +156,21 @@ def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
     
     # VARIABLES
     Lj, Nj = L_vec[index], N_vec[index]
+    
+    ### TO REMOVE
+    # For fluxes analysis
+    #if index == 2 :
+        #print('Lumen 2')
+    #    Jlat  = mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj)
+    #    Jexch = mu_j * (Jjv) / (2.*Lj)
+    #    
+    #    if Jexch < Jlat and 'classification' not in chain.__dict__.keys() :
+            #print(Jexch, Jlat)
+    #        chain.classification = 'coarsening'
+    #    
+    #    f = open('fluxes.dat', 'a')
+    #    f.write(str(t) + '\t' + str(Jlat) + '\t' + str(Jexch) + '\n')
+    #    f.close()
         
     return (mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj) - mu_j * (Jjv) / (2.*Lj))/chain.tauv
     
