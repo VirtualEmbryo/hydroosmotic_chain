@@ -15,11 +15,19 @@ submit.py script.py outdir???? [options]
 
     Options
     -------
+    jobname : optional, string, default : chain
+        Name of the job in the queue
     queue : optional, chosen partition, default : debug
         submit will run the script.py in the specified partition.
     runtime : optional, default : 1-0:00
         maximum running time of the simulation. Syntax is day-hours:minutes:seconds
+    cpu_per_task :
 
+    nodelist :
+    
+    ntasks :
+    
+    nodes :
 
     Examples
     --------
@@ -36,36 +44,46 @@ Creation : 28/09/18
 
 import os, sys
 import subprocess
+
 subcmd = 'sbatch'
 queue = 'debug'
 runtime = '1-0:00'
 cpu_per_task = 1
+nodes = 1
+ntasks = 1
 nodelist = ''
+
 
 folder_path = '/share/mathieu.leverge/git/chain_lumen/_ressources/'
 script = '~/git/chain_lumen/_ressources/chain.py'
 confname = 'config.conf'
 
-def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, nodelist='') :
+mail_type = 'ALL'
+email = 'mathieu.le-verge-serandour@college-de-france.fr'
+
+def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, email=email, nodelist='', jobname='chain', ntasks=1, nodes=1, mail_type='ALL') :
     nconfig=len(directories)
     filename='sim.sh'
     f = open(filename, 'w')
     f.write('#!/bin/bash\n')
-    f.write('#SBATCH --job-name=chain\n')
-    f.write('#SBATCH --ntasks=1\n')
-    f.write('#SBATCH --nodes=1\n')
-    f.write('#SBATCH --cpus-per-task='+ str(cpu_per_task) +'\n')
+    f.write('#SBATCH --job-name=' + jobname + '\n')
+    f.write('#SBATCH --ntasks=' + str(ntasks) +'\n')
+    f.write('#SBATCH --nodes=' + str(nodes) +'\n')
+    f.write('#SBATCH --cpus-per-task=' + str(cpu_per_task) +'\n')
     if len(nodelist) > 0 :
         f.write('#SBATCH --nodelist=' + nodelist + '\n')
     else :
         f.write('#SBATCH --partition=' + queue + '\n')
-    f.write('#SBATCH --time='+runtime+'\n')
+    f.write('#SBATCH --time=' + runtime + '\n')
     f.write('#SBATCH --mem=128\n')
     f.write('#SBATCH --signal=INT@60\n')
     f.write('#SBATCH --signal=TERM@120\n')
     f.write('#SBATCH --output=logs/out/out%a.txt\n')
     f.write('#SBATCH --error=logs/err/err%a.txt\n')
-    f.write('#SBATCH --array=1-'+str(nconfig)+'\n')
+    f.write('#SBATCH --array=1-' + str(nconfig) + '\n')
+    # Mailing options
+    f.write('#SBATCH --mail-type='+mail_type+'\n')
+    f.write('#SBATCH --mail-user=' + email + '\n')
     
     f.write('export OPENBLAS_NUM_THREADS=1\n')
     
@@ -89,7 +107,7 @@ def write_s(confname, script, dirconfig, n) :
     return 0
 
 def main(args):
-    global subcmd, queue, runtime, cpu_per_task, script, confname, nodelist
+    global subcmd, queue, runtime, cpu_per_task, nodes, ntasks, script, confname, nodelist, email, mail_type, jobname
     list_dir = []
 
     for arg in args :
@@ -111,6 +129,22 @@ def main(args):
 
         elif arg.startswith('nodelist=') :
             nodelist = arg[len('nodelist='):]
+            
+        elif arg.startswith('jobname=') :
+            jobname = arg[len('jobname='):]
+        
+        elif arg.startswith('ntasks=') :
+            ntasks = int(arg[len('ntasks='):])
+            
+        elif arg.startswith('nodes=') :
+            ntasks = int(arg[len('nodes='):])
+            
+        elif arg.startswith('email=') :
+            email = arg[len('email='):]
+            
+        elif arg.startswith('mail_type=') :
+            mail_type = arg[len('mail_type='):]
+            
         else :
             list_dir += [arg]
 
@@ -122,7 +156,7 @@ def main(args):
     except : pass
     
     nconfig = len(list_dir)
-    f = write_gen(list_dir, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, nodelist=nodelist)
+    f = write_gen(list_dir, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, nodelist=nodelist, email=email, nodes=nodes, ntasks=ntasks, mail_type=mail_type, jobname=jobname)
     n = 1
     
     for dirconfig in list_dir :
