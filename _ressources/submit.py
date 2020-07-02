@@ -45,6 +45,8 @@ Creation : 28/09/18
 import os, sys
 import subprocess
 
+jobname = 'chain'
+
 subcmd = 'sbatch'
 queue = 'debug'
 runtime = '1-0:00'
@@ -58,10 +60,11 @@ folder_path = '/share/mathieu.leverge/git/chain_lumen/_ressources/'
 script = '~/git/chain_lumen/_ressources/chain.py'
 confname = 'config.conf'
 
+mail_warning = False
 mail_type = 'ALL'
-email = 'mathieu.le-verge-serandour@college-de-france.fr'
+email_adress = 'mathieu.le-verge-serandour@college-de-france.fr'
 
-def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, email=email, nodelist='', jobname='chain', ntasks=1, nodes=1, mail_type='ALL') :
+def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, nodelist='', jobname='chain', ntasks=1, nodes=1, mail_warning=False, email_adress=email_adress, mail_type='ALL') :
     nconfig=len(directories)
     filename='sim.sh'
     f = open(filename, 'w')
@@ -82,8 +85,9 @@ def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_ta
     f.write('#SBATCH --error=logs/err/err%a.txt\n')
     f.write('#SBATCH --array=1-' + str(nconfig) + '\n')
     # Mailing options
-    f.write('#SBATCH --mail-type='+mail_type+'\n')
-    f.write('#SBATCH --mail-user=' + email + '\n')
+    if mail_warning :
+        f.write('#SBATCH --mail-type='+mail_type+'\n')
+        f.write('#SBATCH --mail-user=' + email_adress + '\n')
     
     f.write('export OPENBLAS_NUM_THREADS=1\n')
     
@@ -107,7 +111,8 @@ def write_s(confname, script, dirconfig, n) :
     return 0
 
 def main(args):
-    global subcmd, queue, runtime, cpu_per_task, nodes, ntasks, script, confname, nodelist, email, mail_type, jobname
+    global subcmd, queue, runtime, cpu_per_task, nodes, ntasks, script, confname, nodelist, jobname
+    global mail_warning, email, mail_type
     list_dir = []
 
     for arg in args :
@@ -139,6 +144,9 @@ def main(args):
         elif arg.startswith('nodes=') :
             ntasks = int(arg[len('nodes='):])
             
+        elif arg.startswith('mail_warning=') :
+            mail_warning = eval(arg[len('mail_warning='):])
+            
         elif arg.startswith('email=') :
             email = arg[len('email='):]
             
@@ -156,7 +164,7 @@ def main(args):
     except : pass
     
     nconfig = len(list_dir)
-    f = write_gen(list_dir, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, nodelist=nodelist, email=email, nodes=nodes, ntasks=ntasks, mail_type=mail_type, jobname=jobname)
+    f = write_gen(list_dir, queue=queue, runtime=runtime, cpu_per_task=cpu_per_task, nodelist=nodelist, mail_warning=mail_warning, email_adress=email_adress, nodes=nodes, ntasks=ntasks, mail_type=mail_type, jobname=jobname)
     n = 1
     
     for dirconfig in list_dir :
