@@ -41,7 +41,7 @@ class Chain :
         self.rec = {} 
         self.rec_br = {}
         
-    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, gamma = 1., kappa=1., ca_lumen_list=[], ca_bridge_list=[]) :
+    def __gen_network_lumen_object__(self, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1, ca_lumen_list=[], ca_bridge_list=[]) :
         lumens, bridges, self.total_length = net.gen_random_conf(self.nb_lumens, avg_size=avg_size, std_size=std_size, avg_dist=avg_dist, std_dist=std_dist, dist_toleft=dist_toleft, dist_toright=dist_toright)
         
         for b in range(len(bridges)) :
@@ -54,7 +54,7 @@ class Chain :
             else :
                 ca = ca_lumen_list[m]
             #self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, gamma=gamma, kappa=kappa, ca = ca)
-            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, kappa=kappa, ca = 0)
+            self.lumens_dict[int(lumens[m, 0])] = Lumen(index = int(lumens[m, 0]), init_length=lumens[m,1], init_pos=lumens[m,2], theta=self.theta, ca = 0)
                     
         self.nmax = max(self.lumens_dict.keys())
         
@@ -103,9 +103,6 @@ class Chain :
         cp_chain.nmax = self.nmax
         cp_chain.events = self.events
         cp_chain.merge = self.merge
-        
-        #cp_chain.tau = self.tau
-        cp_chain.kappa = self.kappa
         
         try :
             cp_chain.pumping_args = self.pumping_args
@@ -179,7 +176,7 @@ class Chain :
         # Given by the center of mass of the merging lumens
         pos_k = (pos_i*area_i + pos_j*area_j) / area_k
         
-        kappa_k = 0.5*(kappa_i + kappa_j)
+        #kappa_k = 0.5*(kappa_i + kappa_j)
         
         #if len(self.pumping_args) > 0 :
         try :
@@ -239,11 +236,23 @@ class Chain :
                 if l != 0 and l != -1 : 
                     L += [self.lumens_dict[l].length]
         
-            ellt_avg = np.average(L)
+            Lt_avg = np.average(L)
         
-            return ellt_avg
+            return Lt_avg
         else : return None
         
+    def __calc_L_mf__(self) :
+        L = []
+        if len(self.lumens_dict.keys()) > 2 :
+            for l in self.lumens_dict.keys() :
+                if l != 0 and l != -1 : 
+                    L += [1./self.lumens_dict[l].length]
+        
+            L_mf = 1./np.average(L)
+        
+            return L_mf
+        else : return None
+             
     def __L_vec__(self) :
         L_vec = {}
         for j in self.lumens_dict.keys() :
@@ -270,7 +279,7 @@ class Chain :
         return pos
         
 class Lumen :
-    def __init__(self, index, init_pos, init_length, theta, kappa, ca=0.) :
+    def __init__(self, index, init_pos, init_length, theta, ca=0.) :
         self.index = index
         self.init_pos = init_pos
         self.theta = theta
@@ -282,7 +291,7 @@ class Lumen :
         self.__calc_geom_nu__()
         self.__calc_area__()
         
-        self.kappa = kappa
+        #self.kappa = kappa
         self.ca = ca
         
     def __update__(self) :
@@ -317,7 +326,7 @@ class Lumen :
         return "Lumen {0} is at position {1:.5f} with length {2:.5f} and pumping {3:.5f}".format(self.index, self.pos, self.length, self.ca)
     
     def __copy__(self) :
-        return Lumen(self.index, self.init_pos, self.length, self.theta, self.kappa, self.ca)
+        return Lumen(self.index, self.init_pos, self.length, self.theta, self.ca)
         
 class Bridge :
     def __init__(self, index, lumen1, lumen2, length, ca=0.) :

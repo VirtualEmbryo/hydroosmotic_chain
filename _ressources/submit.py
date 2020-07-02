@@ -60,7 +60,7 @@ def write_gen(directories, queue=queue, runtime=runtime, cpu_per_task=cpu_per_ta
     else :
         f.write('#SBATCH --partition=' + queue + '\n')
     f.write('#SBATCH --time='+runtime+'\n')
-    f.write('#SBATCH --mem=512\n')
+    f.write('#SBATCH --mem=128\n')
     f.write('#SBATCH --signal=INT@60\n')
     f.write('#SBATCH --signal=TERM@120\n')
     f.write('#SBATCH --output=logs/out/out%a.txt\n')

@@ -37,51 +37,56 @@ if warn :
 
 def func_Lj_hydraulic(index, t, L_vec, ell_vec, chain) :
     """
-    Calculate the variation of the lumen index, such as :
+    func_Lj_hydraulic(index, t, L_vec, ell_vec, chain)
     
-    \frac{d L_index}{dt} = J_left + J_right + ca = Jjh
+        Calculate the variation of the lumen index, such as :
     
-    where 
-    ca is the pumping of the lumen index, 
-    J_left is the flux coming from the left (lumen i), 
-    J_right is the flux coming from the right (lumen k).
+        \frac{d L_index}{dt} = J_left + J_right + ja = Jjh
+    
+        where 
+        ja is the pumping of the lumen index, 
+        J_left is the flux coming from the left (lumen i), 
+        J_right is the flux coming from the right (lumen k).
     
     
     
-    Parameters
-    ----------
-    index : int
-        Index of the lumen
-    t : float
-        Current time.
-    L_vec : dict
-        Dictionnary of the lengths of lumens to use to calculate the fluxes.
-    N_vec : dict
-        Dictionnary of the lengths to use to calculate the fluxes.
-    ell_vec : dict
-        Dictionnary of the lengths of bridges to use to calculate the fluxes.
-    chain : chain
-        The chain.
+        Parameters
+        ----------
+        index : int
+            Index of the lumen
+        t : float
+            Current time.
+        L_vec : dict
+            Dictionnary of the lengths of lumens to use to calculate the fluxes.
+        N_vec : dict
+            Dictionnary of the lengths to use to calculate the fluxes.
+        ell_vec : dict
+            Dictionnary of the lengths of bridges to use to calculate the fluxes.
+        chain : chain
+            The chain-object.
     
-    Returns
-    -------
-    Jjh : variation
+        Returns
+        -------
+        Jjh : float 
+            Variation of dL_j / dt
     
     """
     # CALCULATE THE FLUXES
+    # i, k are such that :  i--j--k
     i, k = net.leftright_neighbors(index, chain)
     
-    Jjh_left  = func_JLh(i_left = i, i_right = index, L_vec = L_vec, ell_vec = ell_vec, chain = chain)
-    Jjh_right = func_JRh(i_left = index, i_right = k, L_vec = L_vec, ell_vec = ell_vec, chain = chain)
+    
+    Jjh_left  = func_JLh(i_left = i, i_right = index, L_vec = L_vec, ell_vec = ell_vec, chain = chain)  # Flux from the left bridge
+    Jjh_right = func_JRh(i_left = index, i_right = k, L_vec = L_vec, ell_vec = ell_vec, chain = chain)  # Flux from the right bridge
     
     # CALCULATE THE PUMPING
     try :
-        func = chain.pumping_func
-        args = chain.pumping_args
-        L = chain.lumens_dict[index].length
-        pos = chain.lumens_dict[index].pos
-        x1, x2 = pos - L, pos + L
-        ca = functions.integrate(func, x1, x2, args)
+        func = chain.pumping_func                               # Search for the imposed pumping profile function
+        args = chain.pumping_args                               # Search for the parameters of the profile
+        L = chain.lumens_dict[index].length                     # Length of the lumen
+        pos = chain.lumens_dict[index].pos                      # Center of  mass of the lumen
+        x1, x2 = pos - L, pos + L                               # Positions of the borders of the lumens
+        ca = functions.integrate(func, x1, x2, args)            # Calculate the total pumping for the lumen
         chain.lumens_dict[index].ca = ca
         
     except :
@@ -94,13 +99,13 @@ def func_Lj_hydraulic(index, t, L_vec, ell_vec, chain) :
     
 def func_JLh(i_left, i_right, L_vec, ell_vec, chain) :
     """
+    func_JLh(i_left, i_right, L_vec, ell_vec, chain)
     
         Flux coming from the left of a lumen, thus i_right is the lumen for which the flux is calculated, i_left designates its neighbor.
         The equation for the "incoming" flux of lumen l reads :
                 JLh = |frac{1}{L_r \ell_{r,l}} ( L_l^{-1} - L_r^{-1} )
         
         NB :  that there is no time in this flux.
-            
     """
     if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
         return 0.
@@ -110,10 +115,8 @@ def func_JLh(i_left, i_right, L_vec, ell_vec, chain) :
     ellt = ell_vec[b]
     
     L_L, L_R = L_vec[i_left], L_vec[i_right]
-    
-    kappa_R = chain.lumens_dict[i_right].kappa
-    
-    return kappa_R / (ellt*L_R)*(1./L_L - 1. / L_R)
+        
+    return 1. / (ellt*L_R)*(1./L_L - 1. / L_R)
     
 def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     """
@@ -121,9 +124,7 @@ def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
         The equation for the variation of lumen l reads :
                 \frac{d L_l}{dt} = |frac{1}{L_l \ell_{l,r}} ( L_r^{-1} - L_l^{-1} )
     
-        NB :  that there is no time in this flux.
-        NB : ca_l depends only on the lumen l
-    
+        NB :  there is no time in this flux.    
     """
     if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
         return 0.
@@ -134,9 +135,7 @@ def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
     
     L_L, L_R = L_vec[i_left], L_vec[i_right]
     
-    kappa_L = chain.lumens_dict[i_left].kappa
-    
-    return kappa_L / (ellt*L_L)*(1./L_R - 1./L_L)
+    return 1. / (ellt*L_L)*(1./L_R - 1./L_L)
 
 # ========================================================================
 # ===================== Osmotic Hydraulic ================================
@@ -156,21 +155,6 @@ def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
     
     # VARIABLES
     Lj, Nj = L_vec[index], N_vec[index]
-    
-    ### TO REMOVE
-    # For fluxes analysis
-    #if index == 2 :
-        #print('Lumen 2')
-    #    Jlat  = mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj)
-    #    Jexch = mu_j * (Jjv) / (2.*Lj)
-    #    
-    #    if Jexch < Jlat and 'classification' not in chain.__dict__.keys() :
-            #print(Jexch, Jlat)
-    #        chain.classification = 'coarsening'
-    #    
-    #    f = open('fluxes.dat', 'a')
-    #    f.write(str(t) + '\t' + str(Jlat) + '\t' + str(Jexch) + '\n')
-    #    f.close()
         
     return (mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj) - mu_j * (Jjv) / (2.*Lj))/chain.tauv
     
@@ -456,3 +440,55 @@ def func_deltaP_j(Lj, eps_j, index) :
     else : 
         #print('Leaks')
         return 0.
+        
+# ========================================================================
+# ===================== Mean Field Fluxes ================================
+# ========================================================================   
+def func_Js_MF(index, L_vec, N_vec, ell_vec, chain) :
+    #b = net.find_bridge(i_left, i_right, chain)             # index of the bridge between i and j
+    #ellt = ell_vec[b]                                       # length of the bridge b
+    
+    ell_mf = 1./np.average(np.array([1./ell_vec[k] for k in ell_vec.keys() if k != 0 and k != -1])) # mean-field bridge length
+    L_mf = 1./np.average(np.array([1./L_vec[k] for k in L_vec.keys() if k != 0 and k != -1]))       # mean-field lumen length
+    N_mf = 1./np.average(np.array([1./N_vec[k] for k in N_vec.keys() if k != 0 and k != -1]))       # mean-field lumen nb_ions
+    
+    # SCREENING RATIOS
+    chis  = chain.xis / ell_mf
+    
+    # GEOMETRICAL FACTORS
+    mu_index  = chain.lumens_dict[index].mu
+        
+    dC_mf = 1./np.average([L_vec[k]**2 / (mu_index*N_vec[k]) for k in L_vec.keys() if k != 0 and k != -1])
+    dC_index = func_deltaC_j(Nj=N_vec[index], Lj=L_vec[index], mu_j=mu_index, index=index)
+    ca_LR = 0.
+    
+    return chain.xis * ((dC_index-ca_LR)*np.cosh(1./chis) - (dC_mf-ca_LR)) / np.sinh(1./chis)
+    
+def func_Jv_MF(index, L_vec, N_vec, ell_vec, chain) :
+    #b = net.find_bridge(i_left, i_right, chain)             # index of the bridge between i and j
+    #ellt = ell_vec[b]                                       # length of the bridge b
+    ell_mf = 1./np.average(np.array([1./ell_vec[k] for k in ell_vec.keys() if k != 0 and k != -1])) # mean-field bridge length
+    L_mf = 1./np.average(np.array([1./L_vec[k] for k in L_vec.keys() if k != 0 and k != -1]))       # mean-field lumen length
+    N_mf = 1./np.average(np.array([1./N_vec[k] for k in N_vec.keys() if k != 0 and k != -1]))       # mean-field lumen nb_ions
+    
+    # SCREENING RATIOS
+    chis  = chain.xis / ell_mf
+    chiv  = chain.xiv / ell_mf
+    
+    # GEOMETRICAL FACTORS
+    mu_index  = chain.lumens_dict[index].mu
+    eps_index = chain.lumens_dict[index].eps
+    
+    dC_mf = 1./np.average([L_vec[k]**2 / (mu_index*N_vec[k]) for k in L_vec.keys() if k != 0 and k != -1])
+    dC_index = func_deltaC_j(Nj=N_vec[index], Lj=L_vec[index], mu_j=mu_index, index=index)
+    
+    #P_mf  = eps_index / L_mf
+    P_mf = eps_index / np.average(np.array([L_vec[k] for k in L_vec.keys() if k != 0 and k != -1]))
+    P_index  = func_deltaP_j(Lj=L_vec[index], eps_j=eps_index, index=index)
+    ca_LR = 0.
+    
+    la = lam(-0.5, chiv, chis, dC_mf, dC_index, ca_LR)*np.exp(-0.5/chiv)
+    mb = mu(0.5, chiv, chis, dC_mf, dC_index, ca_LR)*np.exp(-0.5/chiv)
+    
+    return chain.xiv * ((P_index-mb)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_mf-la)/np.sinh(1./chiv) - mb)
+    

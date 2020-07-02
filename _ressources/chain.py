@@ -214,7 +214,7 @@ def load_config(filename) :
                 l_merge=float(config['topology']['l_merge']), 
                 l_dis=float(config['topology']['l_dis']))
             
-            my_chain.kappa = float(config['hydraulic']['kappa'])
+            #my_chain.kappa = float(config['hydraulic']['kappa'])
         
         # GENERATE THE GRAPH
         if lumen_type == 'hydroosmotic' :
@@ -225,14 +225,16 @@ def load_config(filename) :
                 eps = float(config['topology']['eps']), 
                 equilibrium=equilibrium, 
                 pattern=pattern, 
-                nions_avg=nions_avg, nions_std=nions_std)
+                nions_avg=nions_avg, nions_std=nions_std
+                )
                 
         elif lumen_type == 'hydraulic' :
             my_chain.__gen_network_lumen_object__(
                 avg_size=float(config['topology']['avg_size']), std_size=float(config['topology']['std_size']), 
                 avg_dist=float(config['topology']['avg_dist']), std_dist=float(config['topology']['std_dist']), 
                 dist_toleft=float(config['topology']['dist_toleft']), dist_toright=float(config['topology']['dist_toright']), 
-                kappa = float(config['hydraulic']['kappa']))
+                #kappa = float(config['hydraulic']['kappa'])
+                )
                 
         # PUMPING
         if conf.has_option('pumping', 'pattern') : 
@@ -266,8 +268,31 @@ def load_config(filename) :
 # ======================== Runge-Kutta ===================================
 # ========================================================================
 
-def calc_new_timestep(h, error, tolerance, secure=0.8, cst_tstep=0) :
-
+def calc_new_timestep(h, error, tolerance, secure=0.5, cst_tstep=0) :
+    """
+    
+        Calculate the new time step from the previous one (h), given an input error and tolerance.
+        Criterion is based on Press & Teukolsky, Computers in Physics, 1992.
+    
+        Parameters
+        ----------
+        h : float
+            Initial time step.
+        error : float
+            Calculated error from the two estimations of RKF45 integration.
+        tolerance : float
+            Imposed tolerance. Used as a parameter of the configuration.
+        secure : float
+            Security factor, arbitrary value.
+        cst_tstep : boolean, optional, default : False
+            True if the time step must be constant.
+        
+        Returns
+        -------
+        time_step : float
+            New time step
+        
+    """
     if cst_tstep :
         return h
     else :
@@ -284,7 +309,8 @@ def calc_new_timestep(h, error, tolerance, secure=0.8, cst_tstep=0) :
                 #ratio = (tolerance / (2.*error))**0.5
                 #s = secure*min(2., max(0.3, ratio))
         #print(s)
-        return h*s
+        time_step = h*s
+        return time_step
 
 def calc_K_i(T, h, L, ell, chain, K_list=[], coeff_list=[]) :
     """
@@ -377,12 +403,28 @@ def calc_KQ_i(T, h, L, N, ell, chain, K_list=[], Q_list=[], coeff_list=[]) :
     return K, Q
 
 def test_DeltaK(L_vec, ell_vec, Ky, chain) :
+    """
+    
+        Test whether the new vectors L_vec and ell_vec are allowed. 
+        If one of the numbers of L_vec or ell_vec is negative, return repeat=True
+    
+        Parameters
+        ----------
+    
+        Returns
+        -------
+        repeat : boolean
+            True if the integration needs to be repeated.
+        index_L_list : list
+            List of lumen indices where Lj < 0
+        index_ell_list
+            List of bridges indices where ell_j < 0
+    """
     repeat = False
     index_L_list = []
     index_ell_list = []
     for j in L_vec.keys() :
         if L_vec[j]+Ky[j] < 0 :
-            #print(j)
             repeat = True
             index_L_list += [j]
     for b in ell_vec.keys() :
@@ -558,7 +600,6 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
             count += 1
             h = 0.5*h
             chain.events += 'ERROR Time : ' + str(chain.time) + ' : length(s) of lumen(s) ' + str(index_L_list) + ' or bridge(s) ' + str(index_ell_list) + ' is negative. Time step is divided.\n'
-        
             if count >= 10 : print('More than '+str(count)+' trials without convergence. There might be a problem.')
     
     # UPDATE CHAIN
@@ -569,6 +610,59 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
         
     net.calc_ell_list(chain)
     
+    ### Save fluxes
+    if 0 :
+        if 0 :
+        #try :
+            if len(chain.lumens_dict) >= 2 :
+                Jv_dict = {}
+                Js_dict = {}
+                for j in chain.lumens_dict.keys() :
+                    if j != 0 and j != -1 :
+                        i, k = net.leftright_neighbors(j, chain)
+                        JvL = flux.func_JLv(i_left=i, i_right=j, L_vec=chain.__L_vec__(), N_vec=chain.__N_vec__(), ell_vec=chain.__ell_vec__(), chain=chain)
+                        JvR = flux.func_JRv(i_left=j, i_right=k, L_vec=chain.__L_vec__(), N_vec=chain.__N_vec__(), ell_vec=chain.__ell_vec__(), chain=chain)
+                        JsL = flux.func_JLs(i_left=i, i_right=j, L_vec=chain.__L_vec__(), N_vec=chain.__N_vec__(), ell_vec=chain.__ell_vec__(), chain=chain)
+                        JsR = flux.func_JRs(i_left=j, i_right=k, L_vec=chain.__L_vec__(), N_vec=chain.__N_vec__(), ell_vec=chain.__ell_vec__(), chain=chain)
+                        Jv_dict[j] = JvL+JvR
+                        Js_dict[j] = JsL+JsR
+                Jv = np.average(np.array([Jv_dict[j] for j in Jv_dict.keys()]))
+                Js = np.average(np.array([Js_dict[j] for j in Js_dict.keys()]))
+            else :
+                Jv = 0.
+                Js = 0.
+                
+            Jlat = 0
+            #Jlat=chain.lumens_dict[2].mu*chain.lumens_dict[2].nu*(chain.lumens_dict[2].mu * chain.lumens_dict[2].nb_ions / (chain.lumens_dict[2].length**2) - 1. - chain.lumens_dict[2].eps / chain.lumens_dict[2].length)
+            #Jlat = chain.lumens_dict[1].mu*chain.lumens_dict[1].nu*(chain.lumens_dict[1].mu * chain.lumens_dict[1].nb_ions / (chain.lumens_dict[1].length**2) - 1. - chain.lumens_dict[1].eps / chain.lumens_dict[1].length)
+            
+            if Jv < Jlat and 'classification' not in chain.__dict__.keys() :
+                #print(Jexch, Jlat)
+                chain.classification = 'coarsening'
+            f = open('fluxes.dat', 'a')
+            f.write(str(chain.time) + '\t'+ str(Jv) + '\t' + str(Js)+'\t' + str(Jlat) +'\n')
+            f.close() 
+            
+        else :
+            Jv_mf ={}
+            Js_mf ={}
+            for k in chain.lumens_dict.keys() :
+                
+                if k != 0 and k != -1 :
+                    # Factor 2 for left and right fluxes !
+                    Jv_mf[k] = 2*flux.func_Jv_MF(index=k, L_vec=L_vec, N_vec=N_vec, ell_vec=ell_vec, chain=chain)
+                    Js_mf[k] = 2*flux.func_Js_MF(index=k, L_vec=L_vec, N_vec=N_vec, ell_vec=ell_vec, chain=chain)
+                
+            #Jv_mf_avg = np.average(np.array([Jv_mf[k] for k in Jv_mf.keys()]))
+            Jv_mf_avg = np.min(np.array([Jv_mf[k] for k in Jv_mf.keys()]))
+            Js_mf_avg = np.average(np.array([Js_mf[k] for k in Js_mf.keys()]))
+            J_mf_avg = np.average(np.array([Jv_mf[k]+Js_mf[k] for k in Js_mf.keys()]))
+            f = open('fluxes.dat', 'a')
+            f.write(str(chain.time) + '\t' + str(Jv_mf_avg) + '\t' + str(Js_mf_avg) + '\t' + str(J_mf_avg) + '\n')
+            f.close()
+                
+        #except : pass
+    
     # Update Time Step
     error_list = []
     for j in Ky.keys() :
@@ -577,7 +671,6 @@ def rkf45_step(t0, chain, h, tolerance = 1e-6) :
     error = max(error_list)
         
     new_time_step = calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=False)
-    
     return new_time_step
     
 # ========================================================================
@@ -641,11 +734,11 @@ def make_ellfile(ell_avg, filename, folder) :
     file_ell.write(str(0.)+'\t'+str(ell_avg)+'\n')
     file_ell.close()
     
-def make_Lfile(L_avg, filename, folder) :
+def make_Lfile(L_avg, L_mf, filename, folder) :
     file_L = open(os.path.join(folder, filename), 'w')
-    file_L.write('#t\tL(t)\n')
+    file_L.write('#t\tL(t)\tL_*(t)\n')
     
-    file_L.write(str(0.)+'\t'+str(L_avg)+'\n')
+    file_L.write(str(0.)+'\t'+str(L_avg)+'\t'+str(L_mf)+'\n')
     file_L.close()
 
 def save_distribfile(chain, filename_l, filename_nion, folder) :
@@ -682,9 +775,9 @@ def save_ell(t, ellt, filename) :
     file_ell.write(str(t)+'\t'+str(ellt)+'\n')
     file_ell.close()
     
-def save_L(t, Lt, filename) :
+def save_L(t, Lt, L_mf, filename) :
     file_L = open(filename, 'a')
-    file_L.write(str(t)+'\t'+str(Lt)+'\n')
+    file_L.write(str(t)+'\t'+str(Lt)+'\t'+str(L_mf)+'\n')
     file_L.close()
     
 # ========================================================================
@@ -711,13 +804,13 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
 
     make_Nfile(N0=N0, filename='sim_nlum.dat', folder = dir_name)
     make_ellfile(ell_avg=chain.__calc_ell_avg__(), filename='sim_ell_avg.dat', folder = dir_name)
-    make_Lfile(L_avg=chain.__calc_L_avg__(), filename='sim_L_avg.dat', folder = dir_name)
+    make_Lfile(L_avg=chain.__calc_L_avg__(), L_mf=chain.__calc_L_mf__(), filename='sim_L_avg.dat', folder = dir_name)
     
     if rec_distrib :
         save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
     
-    #if 1 :
-    try :
+    if 1 :
+    #try :
         tplg.topology(chain)
         for i in range(max_step) :
             step += 1
@@ -742,7 +835,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
             
             # Save lumens average length
             Lt_avg = chain.__calc_L_avg__()
-            save_L(chain.time, Lt_avg, os.path.join(dir_name, 'sim_L_avg.dat'))
+            Lt_mf = chain.__calc_L_mf__()
+            save_L(chain.time, Lt_avg, Lt_mf, os.path.join(dir_name, 'sim_L_avg.dat'))
             
             # Save distributions
             if rec_distrib and step % nb_frames == 0 :
@@ -763,9 +857,10 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                         tools.save_events(chain, folder='', filename_events='events.txt')
                         print('End simulation : 1 Lumen left')
                         
-                        
                         if recording :
                             tools.save_recording(chain, filename='sim_all.dat', folder=dir_name, chain_type = chain.lumen_type, erase=frame_reg)#
+                        if savefig :
+                            tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
                         break ;
                     
                     elif len(chain.lumens_dict) - 2 == 0 :
@@ -809,8 +904,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 if recording :
                     tools.save_recording(chain, filename='sim_all.dat', folder=dir_name)
             
-    #elif 0 :
-    except RuntimeWarning :
+    elif 0 :
+    #except RuntimeWarning :
         # RuntimeWarning is raised only in the flux.py library
         # If a RuntimeWarning exception occurs, it is raised as an exception.
         chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : Flow error.\n'
@@ -821,8 +916,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
         print('\nSimulation stopped before the end, flow error.')
         end = 0
         
-    #else :
-    except :
+    else :
+    #except :
         chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : error occured in integration.\n'
         tools.save_events(chain, folder='', filename_events='events.txt')
         if recording :
@@ -903,10 +998,13 @@ def main(configname, args) :
         x = np.linspace(0, my_chain.total_length, 1001)
         tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(0).zfill(8)+'.png'))
     
-    ### Flux file 
-    #f = open('fluxes.dat', 'w')
-    #f.write('t\tJlat\tJexch\n')
-    #f.close()
+    ### Flux file
+    write_fluxes=0
+    if write_fluxes :
+        f = open('fluxes.dat', 'w')
+        #f.write('t\tJlat\tJv\tJs\n')
+        f.write('t\tJv_mf_avg\tJs_mf_avg\tJ_mf_avg\n')
+        f.close()
     
     # Run Simulation
     end = run(my_chain, max_step = max_step, alpha = alpha, recording=recording, rec_distrib=rec_distrib, tolerance=tolerance, nb_frames=nb_frames, solver=solver, savefig=savefig, state_simul=state_simul, dir_name=dir_name,  pics_dirname=pics_dirname, frame_reg=frame_reg)
@@ -914,21 +1012,20 @@ def main(configname, args) :
 
     ### Classification
     # Add the ending event to events.txt
-    #if 'classification' not in my_chain.__dict__.keys() :
-    #    my_chain.classification = 'collapse'
+    if 'classification' not in my_chain.__dict__.keys() :
+        my_chain.classification = 'collapse'
         
-    #print(my_chain.classification)
-    ###
         
     if rec_last_event :
         ### TO REMOVE
-        if 0 : 1
-        #    eventfilename='events.txt'
-        #    fe = open(eventfilename, 'a+')
-        #    if my_chain.classification == 'collapse' :
-        #        fe.write('Time ' + "{:4.6f}".format(my_chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0))
-        #    else :
-        #        fe.write('Time ' + "{:4.6f}".format(my_chain.time) + ' : winner (' + 'C' + ') is lumen ' + str(2))
+        if 0 :
+            eventfilename='events.txt'
+            fe = open(eventfilename, 'a+')
+            if my_chain.classification == 'collapse' :
+                fe.write('Time ' + "{:4.6f}".format(my_chain.time) + ' : winner (' + 'D' + ') is lumen ' + str(0))
+            else :
+                fe.write('Time ' + "{:4.6f}".format(my_chain.time) + ' : winner (' + 'C' + ') is lumen ' + str(2))
+            fe.close()
         
         ### TO PUT BACK
         else :
@@ -939,7 +1036,7 @@ def main(configname, args) :
     
     # Add ending time to the log.txt file
     tools.add_end_time(outdir=dir_name, end=end)
-    
+    #plt.savefig('ex.eps', format='eps')
     return ;
     
 if __name__ == '__main__' :

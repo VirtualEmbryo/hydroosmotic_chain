@@ -157,20 +157,22 @@ def profile(x, chain, theta=np.pi/3., h0=0.1) :
     return h_u, h_d
 
 def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
-    fig, ax = plt.subplots(1, 1)
+    ###fig, ax = plt.subplots(1, 1)
     
-    #number = int(savename[-11:-4])
     h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
-    ###ax[1].suptitle('t = ' + "{:5.5f}".format(chain.time))
-    #if number==8000 :
-    #    plt.plot(x-2e-3*number, h_d-2e-3*number, linewidth = lw, color = contour_color)
-    #plt.plot(x-2e-3*number, h_u-2e-3*number, linewidth = lw, color = contour_color)
-    ax.plot(x, h_d, linewidth = lw, color = contour_color)
-    ax.plot(x, h_u, linewidth = lw, color = contour_color)
+    #ax[1].suptitle('t = ' + "{:5.5f}".format(chain.time))
+    number=int(savename[-11:-4])
+    cste = -7e-3
+    if number == 0 :
+        plt.plot(x-number*cste, h_d-number*cste, linewidth = lw, color = contour_color)
+    plt.plot(x-number*cste, h_u-number*cste, linewidth = lw, color = contour_color)
+    
+    #ax.plot(x, h_d, linewidth = lw, color = contour_color)
+    #ax.plot(x, h_u, linewidth = lw, color = contour_color)
 
     xmin, xmax = np.min(x), np.max(x)
-    ax.set_xlim(xmin, xmax)
-    ax.set_xlim(xmin, xmax)
+    ###ax.set_xlim(xmin, xmax)
+    ###ax.set_xlim(xmin, xmax)
     
     if centers :
         for k in list(chain.lumens_dict.keys()) :
@@ -181,25 +183,28 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig
                 
     #ax.vlines(x=0., ymin=-1., ymax=1.)
     #ax.vlines(x=chain.total_length, ymin=-1., ymax=1.)
-    ax.axis('equal')
+    ###ax.axis('equal')
+    plt.axis('equal')
+    plt.axis('off')
     
-    if not axis :
-        ax.axis('off')
+    ###if not axis :
+    ###    ax.axis('off')
     #format = 'eps'
     #savefig = 1
     
     #print(number)
     #savename=savename[:-4] + '.eps'
     #if savefig and number == 8000 :
-    plt.suptitle('Time = '+"{:4.4e}".format(chain.time))
+    
+    #plt.suptitle('Time = '+"{:4.4e}".format(chain.time))
     if savefig :
         plt.savefig(savename, format=format)
 
-    if show : plt.show()
-    else : plt.close()
+    #if show : plt.show()
+    #else : plt.close()
 
-def plot_profile2(x, chain, ca, pos, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
-    fig, ax = plt.subplots(2, 1, figsize=(6, 8))
+def plot_profile2(x, chain, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
+    fig, ax = plt.subplots(1, 1, figsize=(6, 8))
     
     try :
         args = functions.get_parameters(chain.pumping_args, chain.pumping_func)
@@ -210,11 +215,11 @@ def plot_profile2(x, chain, ca, pos, theta=np.pi/3., centers = True, axis = True
     except : pass
     
     #number = int(savename[-11:-4])
+    number=8000
     h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
     ###ax[1].suptitle('t = ' + "{:5.5f}".format(chain.time))
-    #if number==8000 :
-    #    plt.plot(x-2e-3*number, h_d-2e-3*number, linewidth = lw, color = contour_color)
-    #plt.plot(x-2e-3*number, h_u-2e-3*number, linewidth = lw, color = contour_color)
+    
+    plt.plot(x-2e-3*number, h_u-2e-3*number, linewidth = lw, color = contour_color)
     ax[1].plot(x, h_d, linewidth = lw, color = contour_color)
     ax[1].plot(x, h_u, linewidth = lw, color = contour_color)
 
