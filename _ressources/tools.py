@@ -106,6 +106,7 @@ def msd_fft1d(x):
         S1[m]=Q/(N-m)
     return S1-2*S2
     
+
 # ========================================================================
 # ========================== Trajectories ================================
 # ========================================================================
@@ -156,23 +157,43 @@ def profile(x, chain, theta=np.pi/3., h0=0.1) :
                 h_d[i] = calc_height_dw(x[i], L_list[k], theta, h0, pos_x[k])
     return h_u, h_d
 
-def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
-    ###fig, ax = plt.subplots(1, 1)
+def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig = False, show=True, savename = 'pic.png', picformat='png', lw = 2, contour_color='k', center_color='r', xlim=[]) :
+    #fig, ax = plt.subplots(1, 1)
     
     h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
+    
     #ax[1].suptitle('t = ' + "{:5.5f}".format(chain.time))
     number=int(savename[-11:-4])
-    cste = -7e-3
+    cste = -1e-2
     if number == 0 :
         plt.plot(x-number*cste, h_d-number*cste, linewidth = lw, color = contour_color)
-    plt.plot(x-number*cste, h_u-number*cste, linewidth = lw, color = contour_color)
+        plt.plot(x-number*cste, h_u-number*cste, linewidth = lw, color = contour_color)
+    else :
+        plt.plot(x-number*cste, h_u-number*cste, linewidth = lw, color = contour_color)
+    
+    ### TO REMOVE
+    #def gaussian_profile(x, amp, mu, sigma, threshold) :
+    #    return amp*np.exp(-(x-mu)**2/sigma**2) + threshold
+    #amp, mu, sigma, threshold = 1.0, 0.4, 0.05, 1.
+    #y0 = 10
+    #for k in chain.lumens_dict.keys() :
+    #    if k != 0 and k !=-1 :
+    #        xp = chain.lumens_dict[k].pos
+    #        V = -gaussian_profile(xp/chain.total_length, amp, mu, sigma, threshold)
+    #        ax.plot((xp, xp), (y0, y0+V*2.), color='k')
+    #ax.plot(x, 20*gaussian_profile(x, amp, mu*chain.total_length, sigma*chain.total_length, threshold))
+    ###
     
     #ax.plot(x, h_d, linewidth = lw, color = contour_color)
     #ax.plot(x, h_u, linewidth = lw, color = contour_color)
+    ##plt.plot(x, h_d, linewidth = lw, color = contour_color)
+    ##plt.plot(x, h_u, linewidth = lw, color = contour_color)
 
-    xmin, xmax = np.min(x), np.max(x)
-    ###ax.set_xlim(xmin, xmax)
-    ###ax.set_xlim(xmin, xmax)
+    if len(xlim) > 0 :
+        xmin, xmax = xlim[0], xlim[1]
+    else :
+        xmin, xmax = np.min(x), np.max(x)
+    xmin, xmax = chain.total_length*0.18, chain.total_length*0.82
     
     if centers :
         for k in list(chain.lumens_dict.keys()) :
@@ -183,12 +204,14 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig
                 
     #ax.vlines(x=0., ymin=-1., ymax=1.)
     #ax.vlines(x=chain.total_length, ymin=-1., ymax=1.)
-    ###ax.axis('equal')
+    #ax.axis('equal')
     plt.axis('equal')
     plt.axis('off')
+    #ax.set_xlim(xmin, xmax)
+    #plt.xlim(xmin, xmax)
     
-    ###if not axis :
-    ###    ax.axis('off')
+    ##if not axis :
+    ##    ax.axis('off')
     #format = 'eps'
     #savefig = 1
     
@@ -197,8 +220,9 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig
     #if savefig and number == 8000 :
     
     #plt.suptitle('Time = '+"{:4.4e}".format(chain.time))
+    #if savefig :
     if savefig :
-        plt.savefig(savename, format=format)
+        plt.savefig(savename, picformat=format)
 
     #if show : plt.show()
     #else : plt.close()

@@ -860,7 +860,17 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                         if recording :
                             tools.save_recording(chain, filename='sim_all.dat', folder=dir_name, chain_type = chain.lumen_type, erase=frame_reg)#
                         if savefig :
+                            def gaussian_profile(x, amp, mu, sigma, threshold) :
+                                return amp*np.exp(-(x-mu)**2/sigma**2) + threshold
+                            mu = my_chain.pumping_args['mu']
+                            sigma = my_chain.pumping_args['sigma']
+                            fmin = my_chain.pumping_args['fmin']
+                            amp = my_chain.pumping_args['amp']
+                            cste = -1e-2
+                            plt.plot(x-cste*step, 10.*gaussian_profile(x, amp, mu, sigma, fmin)-cste*step + 10, color = 'r')
+                            
                             tools.plot_profile(x, my_chain, centers=False, lw=1.5, show=False, savefig=True, savename=os.path.join(pics_dirname, 'pic'+str(step).zfill(8)+'.png'))
+                        
                         break ;
                     
                     elif len(chain.lumens_dict) - 2 == 0 :
@@ -1036,7 +1046,9 @@ def main(configname, args) :
     
     # Add ending time to the log.txt file
     tools.add_end_time(outdir=dir_name, end=end)
-    #plt.savefig('ex.eps', format='eps')
+    
+    if savefig :
+        plt.savefig('ex.eps', format='eps')    
     return ;
     
 if __name__ == '__main__' :

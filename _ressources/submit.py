@@ -19,11 +19,11 @@ submit.py script.py outdir???? [options]
         Name of the job in the queue
     queue : optional, chosen partition, default : debug
         submit will run the script.py in the specified partition.
+    nodelist : string, optional, default : ''
+        submit to the list of nodes, for instance coste1, coste4, or coste[1-3,5]
     runtime : optional, default : 1-0:00
         maximum running time of the simulation. Syntax is day-hours:minutes:seconds
     cpu_per_task :
-
-    nodelist :
     
     ntasks :
     

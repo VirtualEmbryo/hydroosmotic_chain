@@ -126,6 +126,15 @@ class Chain :
         if abs(self.lumens_dict[-1].pos - self.total_length) > eps :
             print('The right border position ('+str(self.lumens_dict[-1].pos)+') does not correspond to total length ('+str(self.total_length)+')')
         
+    def __give_lengths__(self) :
+        lengths = np.zeros(self.nb_lumens)
+        n = 0
+        for k in self.lumens_dict.keys() :
+            if k != 0 and k != -1 :
+                lengths[n] = self.lumens_dict[k].length
+                n+=1
+        return lengths
+    
     def __give_positions__(self) :
         positions = np.zeros((self.nb_lumens+2, 2))
         n = 0
@@ -165,7 +174,7 @@ class Chain :
         mu_i, mu_j = self.lumens_dict[i].mu, self.lumens_dict[j].mu
         area_i, area_j = L_i**2 / mu_i, L_j**2 / mu_j
         
-        kappa_i, kappa_j = self.lumens_dict[i].kappa, self.lumens_dict[j].kappa
+        #kappa_i, kappa_j = self.lumens_dict[i].kappa, self.lumens_dict[j].kappa
         ca_i, ca_j = self.lumens_dict[i].ca, self.lumens_dict[j].ca
         
         mu_k = 0.5*(mu_i + mu_j)
@@ -186,7 +195,7 @@ class Chain :
         except :
             ca_k = 0.5*(ca_i+ca_j)
         
-        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, kappa=kappa_k, ca = ca_k)
+        self.lumens_dict[k] = Lumen(index=k, init_pos=pos_k, init_length=L_k, theta=self.theta, ca = ca_k)
         
         # Bridge
         
