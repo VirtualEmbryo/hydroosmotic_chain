@@ -268,7 +268,7 @@ def load_config(filename) :
 # ======================== Runge-Kutta ===================================
 # ========================================================================
 
-def calc_new_timestep(h, error, tolerance, secure=0.5, cst_tstep=0) :
+def calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=0) :
     """
     
         Calculate the new time step from the previous one (h), given an input error and tolerance.
