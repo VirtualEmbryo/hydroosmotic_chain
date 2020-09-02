@@ -155,7 +155,7 @@ def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
     
     # VARIABLES
     Lj, Nj = L_vec[index], N_vec[index]
-        
+    
     return (mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj) - mu_j * (Jjv) / (2.*Lj))/chain.tauv
     
 def func_Nj(index, t, L_vec, N_vec, ell_vec, chain) :
@@ -183,7 +183,6 @@ def func_Nj(index, t, L_vec, N_vec, ell_vec, chain) :
     except :
         ca = chain.lumens_dict[index].ca
     
-        
     return (2.*nu_j*Lj*(1. + ca - mu_j*Nj/(Lj*Lj)) -  Jjs)/chain.taus
     
 ### OSMOTIC FLUXES

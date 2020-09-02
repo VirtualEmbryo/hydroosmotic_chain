@@ -112,13 +112,13 @@ def gen_random_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, 
     
     
     """
-    lengths = np.random.normal(loc=avg_size, scale=std_size, size=M)
+    #lengths = np.random.normal(loc=avg_size, scale=std_size, size=M)
     
     ### TO REMOVE
-    #areas = np.random.normal(loc=avg_size, scale=std_size, size=M)
-    #theta = np.pi/3.
-    #mu = np.sin(theta)**2 / (2*theta - np.sin(2*theta))
-    #lengths = np.sqrt(mu*areas)
+    areas = np.random.normal(loc=avg_size, scale=std_size, size=M)
+    theta = np.pi/3.
+    mu = np.sin(theta)**2 / (2*theta - np.sin(2*theta))
+    lengths = np.sqrt(mu*areas)
     ### TO REMOVE
     
     distances = np.random.normal(loc=avg_dist, scale=std_dist, size=M-1)
