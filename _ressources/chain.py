@@ -309,7 +309,8 @@ def calc_new_timestep(h, error, tolerance, secure=0.9, cst_tstep=0) :
                 #ratio = (tolerance / (2.*error))**0.5
                 #s = secure*min(2., max(0.3, ratio))
         #print(s)
-        time_step = h*s
+        #time_step = h*s
+        time_step = max(h*s, 1e-10)   # if h*s = 0, then min t_step = 1e-10
         return time_step
 
 def calc_K_i(T, h, L, ell, chain, K_list=[], coeff_list=[]) :
@@ -852,7 +853,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                     # One lumen left : return 2 ; otherwise return 1
                     if len(chain.lumens_dict) - 2 == 1 and one_lumen_end :
                         end = 2
-                        chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : end. One lumen left.'
+                        chain.events += 'wwwwwwwwwwwwwTime ' + "{:4.6f}".format(chain.time) + ' : end. One lumen left.'
                         #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(chain.winner))
                         tools.save_events(chain, folder='', filename_events='events.txt')
                         print('End simulation : 1 Lumen left')
