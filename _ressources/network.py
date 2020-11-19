@@ -1,3 +1,36 @@
+"""
+network.py library, containing generic functions used to generate networks of lumens in one-dimension, 
+in the form of numpy arrays.
+
+
+    Contains
+    -------
+        Network Generation
+    calc_inter_dist     : Calculate a bridge length
+    make_network        : Make a network of lumens connected by bridges
+    gen_random_conf     : Generate a random network of lumens and bridges
+    gen_uniform_conf    : Generate a uniform network of lumens and bridges
+
+        Network
+    calc_ell_list       : Calculates the lengths of bridges and update the chain
+    find_neighbors      : Find all neighbors of a lumen
+    leftright_neighbors : Identify left and right neighbors of a lumen
+    connected_bridges   : Find all connecting bridges indices
+    find_bridge         : Find the bridge connecting two lumens.
+
+        Hydroosmotic chain functions
+    osmotic_equilibrium     : Find osmotic equilibrium
+    gen_osmotic_equilibrium : Generate osmotic equilibrium conditions for several lumens
+    gen_ion_array           : Generate an array for the number of ions similar to the one for lengths
+    calc_nuj_list           : Calculate a list of geometrical parameters nu
+    calc_muj_list           : Calculate a list of geometrical parameters nu
+
+    Requirements
+    ------------
+        Python libraries
+    numpy (np)
+"""
+
 import numpy as np
 
 # ========================================================================
@@ -107,37 +140,34 @@ def gen_random_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, 
             Array of lumens
         bridges : array
             Array of bridges
-        L0 : float
+        Ltot : float
             Total length of the chain.
-    
-    
+
     """
-    #lengths = np.random.normal(loc=avg_size, scale=std_size, size=M)
-    
-    ### TO REMOVE
+    # Generate a gaussian distribution for the lumen areas
     areas = np.random.normal(loc=avg_size, scale=std_size, size=M)
     theta = np.pi/3.
     mu = np.sin(theta)**2 / (2*theta - np.sin(2*theta))
-    lengths = np.sqrt(mu*areas)
-    ### TO REMOVE
+    lengths = np.sqrt(mu*areas)    # Convert back to lengths
     
+    # Generate a gaussian distribution for the bridge distances
     distances = np.random.normal(loc=avg_dist, scale=std_dist, size=M-1)
     positions = np.zeros(M)
     positions[0] = lengths[0] + dist_toleft
     for n in range(1, M) :
         positions[n] = positions[n-1] + lengths[n-1] + lengths[n] + distances[n-1]
         
-    L0 = np.sum(distances) + 2*np.sum(lengths) + dist_toleft + dist_toright
+    Ltot = np.sum(distances) + 2*np.sum(lengths) + dist_toleft + dist_toright
     
-    lumens, bridges = make_network(lengths, positions, L0)
+    lumens, bridges = make_network(lengths, positions, Ltot)
     
-    return lumens, bridges, L0
+    return lumens, bridges, Ltot
     
 def gen_uniform_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1) :
     """
-    gen_random_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1)
+    gen_uniform_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1, dist_toleft=0.1, dist_toright=0.1)
     
-        Generate a random configuration
+        Generate a uniform configuration of lumens, having the same size, and same bridges lengths.
         
         Parameters
         ----------
@@ -164,7 +194,7 @@ def gen_uniform_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1,
             Array of lumens
         bridges : array
             Array of bridges
-        L0 : float
+        Ltot : float
             Total length of the chain.
     
     
@@ -176,30 +206,29 @@ def gen_uniform_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1,
     for n in range(1, M) :
         positions[n] = positions[n-1] + lengths[n-1] + lengths[n] + distances[n-1]
         
-    L0 = np.sum(distances) + 2*np.sum(lengths) + dist_toleft + dist_toright
+    Ltot = np.sum(distances) + 2*np.sum(lengths) + dist_toleft + dist_toright
     
-    lumens, bridges = make_network(lengths, positions, L0)
+    lumens, bridges = make_network(lengths, positions, Ltot)
     
-    return lumens, bridges, L0
+    return lumens, bridges, Ltot
     
-#=========
+# ========================================================================
+# ============================ Network ===================================
+# ========================================================================
 
 def calc_ell_list(chain) :
     """
-    calc_ell_list(lumens, bridges)
+    calc_ell_list(chain)
     
         Calculate the distances between two consecutive lumens given lumens and bridges array.
     
         Parameters
         ----------
-        lumens : array
-            Array of the lumens
-        bridges : array
-            Array of the bridges
+        chain : chain-object
         
         Returns
         -------
-        No returns, directly changes the chain.
+        No returns, changes the chain directly.
     """
     ell_list = np.zeros(len(chain.bridges_dict))
     
@@ -212,8 +241,20 @@ def calc_ell_list(chain) :
     
 def find_neighbors(index, bridges_dict) :
     """
+    find_neighbors(index, bridges_dict) 
     
         Finds neighbors of lumen with index j
+    
+        Parameters
+        ----------
+        index : int
+            Index of the lumen j
+        bridges_dict : dict
+            Dictionnary of the bridges
+        Returns
+        -------
+        neighbors : list
+            List of the neighbors of lumen j
     """
     neighbors = []
     for k in bridges_dict.keys() :
@@ -225,8 +266,21 @@ def find_neighbors(index, bridges_dict) :
     
 def leftright_neighbors(j, chain) :
     """
+    leftright_neighbors(j, chain)
     
         Returns indices of neighbors of lumen j, ordered by position.
+    
+        Parameters
+        ----------
+        j : int
+            Index of the lumen
+        chain : chain
+            The chain
+    
+        Returns
+        -------
+        [i, k] if i is before k
+        [k, i] otherwise
     """
     i, k = find_neighbors(j, chain.bridges_dict)
     if chain.lumens_dict[i].pos <= chain.lumens_dict[k].pos :
@@ -236,7 +290,19 @@ def leftright_neighbors(j, chain) :
         
 def connected_bridges(index, bridges_dict) :
     """
+    connected_bridges(index, bridges_dict)
+        
+        Parameters
+        ----------
+        index : int
+            Index of the considered lumen            
+        bridges_dict : dict
+            Dictionnary of bridges
     
+        Returns
+        -------
+        bridges_index : list
+            List of bridges connected to the lumen 
     """
     bridges_index = []
     for k in bridges_dict.keys() :
@@ -245,10 +311,28 @@ def connected_bridges(index, bridges_dict) :
     return bridges_index
 
 def find_bridge(i, j, chain) :
+    """
+    find_bridge(i, j, chain)
+    
+        Find the bridge connecting lumens i and j in the chain
+    
+        Parameters
+        ----------
+        i, j : int
+            Indices of two lumens
+    
+        Returns
+        -------
+        br : int
+            Index of the connecting bridge, if it exists
+    """
     B = chain.bridges_dict
     for b in B.keys() :
         if (B[b].lumen1 == i and B[b].lumen2 == j) or (B[b].lumen1 == j and B[b].lumen2 == i) :
             br = b
+        else :
+            print('No bridge found to connect these lumens ('+str(i)+', '+str(j)+') !')
+            return None
     return br
     
 # ========================================================================
@@ -256,7 +340,23 @@ def find_bridge(i, j, chain) :
 # ========================================================================
 def osmotic_equilibrium(L, nu, mu) :
     """
+    osmotic_equilibrium(L, nu, mu)
     
+        Calculates the number of ions required for osmotic equilibrium, such that
+            $$N = \frac{L^2}{\mu}$$
+    
+        Parameters
+        ----------
+        L : float
+            Length of the lumen
+        nu : float
+            Geometrical parameter
+        mu : float
+            Geometrical parameter
+        Returns
+        -------
+        N : float
+            Number of ions
     """
     N = L**2 / mu
     return N
@@ -265,14 +365,28 @@ def gen_osmotic_equilibrium(L_list, M, nu_list, mu_list) :
     """
     gen_osmotic_equilibrium(L_list, M, nu_list, mu_list)
     
-        Calculate an osmotic equilibrium
+        Calculate an osmotic equilibrium for a list of M lumens
+        
+        Parameters
+        ----------
+        L_list : array
+            List of lenghts of lumens
+        M : int
+            Number of lumens
+        nu_list : array
+            List of geometrical parameters
+        mu_list : array
+            List of geometrical parameters
+        Returns
+        -------
+        N_list : array
+            List of number of ions of lumens
+            
     """
     N_list = np.zeros(M)
     for m in range(M) :
-        #N_list[m] = L_list[m]**2 / (2.*nu_list[m]*L_list[m]*mu_list[m])
         N_list[m] = osmotic_equilibrium(L_list[m], nu_list[m], mu_list[m])
-        #print(m, L_list[m])
-    #print(N_list)
+
     return N_list
 
 def gen_ion_array(lumens, theta=np.pi/3., equilibrium = True, avg_nion=0.5, std_nion=1e-2) :
@@ -301,7 +415,7 @@ def gen_ion_array(lumens, theta=np.pi/3., equilibrium = True, avg_nion=0.5, std_
     M = len(lumens)-2
     L_list = lumens[1:-1, 1]
     
-    nu_list, mu_list = calc_nuj_list(np.ones(M)*theta), calc_muj_list(np.ones(M)*theta)        ### TO BE FIXED  !!!
+    nu_list, mu_list = calc_nuj_list(np.ones(M)*theta), calc_muj_list(np.ones(M)*theta)
     
     if equilibrium :
         Nions = gen_osmotic_equilibrium(L_list, M, nu_list, mu_list)
@@ -313,9 +427,37 @@ def gen_ion_array(lumens, theta=np.pi/3., equilibrium = True, avg_nion=0.5, std_
     return mat
     
 def calc_nuj_list(theta_list) :
+    """
+    calc_nuj_list(theta_list)
+            
+        Calculate the array of geometrical parameters nu
+    
+        Parameters
+        ----------
+        theta_list : array
+            List of contact angles
+        Returns
+        -------
+        nu_list : array
+            Array of nu's
+    """
     return theta_list / np.sin(2*theta_list)
 
 def calc_muj_list(theta_list) :
+    """
+    calc_nuj_list(theta_list)
+            
+        Calculate the array of geometrical parameters mu
+    
+        Parameters
+        ----------
+        theta_list : array
+            List of contact angles
+        Returns
+        -------
+        mu_list : array
+            Array of mu's
+    """
     return np.sin(theta_list)**2 / (2*theta_list - np.sin(2*theta_list))
 
 #

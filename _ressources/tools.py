@@ -157,19 +157,21 @@ def profile(x, chain, theta=np.pi/3., h0=0.1) :
                 h_d[i] = calc_height_dw(x[i], L_list[k], theta, h0, pos_x[k])
     return h_u, h_d
 
-def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig = False, show=True, savename = 'pic.png', picformat='png', lw = 1, contour_color='k', center_color='r', xlim=[]) :
+def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig = False, show=False, savename = 'pic.png', picformat='png', lw = 1, contour_color='k', center_color='r', xlim=[]) :
     #fig, ax = plt.subplots(1, 1)
-    
+    #show=True
     h_u, h_d = profile(x, chain, theta=theta, h0=chain.e0)
-    
+    lw=1
     ###plt.suptitle('t = ' + "{:5.5f}".format(chain.time))
     number=int(savename[-11:-4])
-    cste = -1e-2
-    if number == 0 :
-        plt.plot(x-number*cste, h_d-number*cste, linewidth = lw, color = contour_color)
-        plt.plot(x-number*cste/2, h_u-number*cste, linewidth = lw, color = contour_color)
-    else :
-        plt.plot(x-number*cste/2, h_u-number*cste, linewidth = lw, color = contour_color)
+    number=0
+    #cste = -1e-2
+    cste=0
+    #if number == 0 :
+    #    plt.plot(x-number*cste, h_d-number*cste, linewidth = lw, color = contour_color)
+    #    plt.plot(x-number*cste/2, h_u-number*cste, linewidth = lw, color = contour_color)
+    #else :
+    #    plt.plot(x-number*cste/2, h_u-number*cste, linewidth = lw, color = contour_color)
     
     ### TO REMOVE
     #def gaussian_profile(x, amp, mu, sigma, threshold) :
@@ -186,8 +188,9 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig
     
     ###ax.plot(x, h_d, linewidth = lw, color = contour_color)
     ###ax.plot(x, h_u, linewidth = lw, color = contour_color)
-    #plt.plot(x, h_d, linewidth = lw, color = contour_color)
-    #plt.plot(x, h_u, linewidth = lw, color = contour_color)
+    
+    plt.plot(x, h_d, linewidth = lw, color = contour_color)
+    plt.plot(x, h_u, linewidth = lw, color = contour_color)
 
     if len(xlim) > 0 :
         xmin, xmax = xlim[0], xlim[1]
@@ -219,14 +222,18 @@ def plot_profile(x, chain, theta=np.pi/3., centers = True, axis = False, savefig
     #savename=savename[:-4] + '.eps'
     #if savefig and number == 8000 :
     
-    #plt.suptitle('Time = '+"{:4.4e}".format(chain.time))
+    plt.suptitle(r'$\bar{t}$ = '+"{:4.4e}".format(chain.time), fontsize=20)
+    #plt.text(s='Exchange', x=0.35*(xmax+xmin), y=-2., fontsize=20)
+    #plt.text(s='Collapse', x=0.35*(xmax+xmin), y=-2., fontsize=20)
+    
     #if savefig :
     if savefig :
         #print(savename)
-        plt.savefig(savename[:-4]+'.eps', format='eps')
+        #plt.savefig(savename[:-4]+'.png', format='png')
+        plt.savefig(savename[:-4]+'.png', format='png', dpi=200)
 
     if show : plt.show()
-    #else : plt.close()
+    else : plt.close()
 
 def plot_profile2(x, chain, theta=np.pi/3., centers = True, axis = True, savefig = False, show=True, savename = 'pic.png', format='png', lw = 2, contour_color='k', center_color='r') :
     fig, ax = plt.subplots(1, 1, figsize=(6, 8))

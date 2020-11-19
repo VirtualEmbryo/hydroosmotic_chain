@@ -246,10 +246,16 @@ def load_config(filename) :
             my_chain.pumping = 'None'
 
     if lumen_type == 'hydroosmotic' :
-        ###average_length_bridges = np.average([my_chain.bridges_dict[k].length for k in my_chain.bridges_dict.keys()])
         average_length_bridges = my_chain.__calc_ell_avg__()
+        average_L = my_chain.__calc_L_avg__()
+        
         my_chain.xis = chis*average_length_bridges
         my_chain.xiv = chiv*average_length_bridges
+        
+        ### TO REMOVE
+        my_chain.xiv_bar = my_chain.xiv/np.sqrt(average_length_bridges*average_L)
+        my_chain.xis_bar = my_chain.xis/np.sqrt(average_length_bridges*average_L)
+        ### TO REMOVE
             
         my_chain.leaks = eval(config['hydroosmotic']['leaks'])
     
@@ -259,8 +265,6 @@ def load_config(filename) :
         if not my_chain.merge : print('Merging not allowed')
     else :
         my_chain.merge = True
-        
-    #print(my_chain)
         
     return config, my_chain
 
@@ -518,6 +522,7 @@ def rk45_step(t0, chain, h, alpha) :
     return new_time_step
 
 def rkf45_step(t0, chain, h, tolerance = 1e-6) :
+    # Makes a copy of the chain
     cp_chain = chain.__copy__()
     
     L_vec, ell_vec = chain.__L_vec__(), chain.__ell_vec__()
@@ -810,8 +815,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
     if rec_distrib :
         save_distribfile(chain, filename_l = 'distrib_length.dat', filename_nion = 'distrib_nion.dat', folder = dir_name)
     
-    if 1 :
-    #try :
+    #if 1 :
+    try :
         tplg.topology(chain)
         for i in range(max_step) :
             step += 1
@@ -853,7 +858,7 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                     # One lumen left : return 2 ; otherwise return 1
                     if len(chain.lumens_dict) - 2 == 1 and one_lumen_end :
                         end = 2
-                        chain.events += 'wwwwwwwwwwwwwTime ' + "{:4.6f}".format(chain.time) + ' : end. One lumen left.'
+                        chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : end. One lumen left.'
                         #chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : winner is lumen ' + str(int(chain.winner))
                         tools.save_events(chain, folder='', filename_events='events.txt')
                         print('End simulation : 1 Lumen left')
@@ -915,8 +920,8 @@ def run(chain, max_step=1000, alpha=1e-4, savefig=False, nb_frames=1000, dir_nam
                 if recording :
                     tools.save_recording(chain, filename='sim_all.dat', folder=dir_name)
             
-    elif 0 :
-    #except RuntimeWarning :
+    #elif 0 :
+    except RuntimeWarning :
         # RuntimeWarning is raised only in the flux.py library
         # If a RuntimeWarning exception occurs, it is raised as an exception.
         chain.events += 'Time ' + "{:4.6f}".format(chain.time) + ' : Flow error.\n'
@@ -1029,6 +1034,7 @@ def main(configname, args) :
         
     if rec_last_event :
         ### TO REMOVE
+        print('rec')
         if 0 :
             eventfilename='events.txt'
             fe = open(eventfilename, 'a+')
@@ -1048,8 +1054,8 @@ def main(configname, args) :
     # Add ending time to the log.txt file
     tools.add_end_time(outdir=dir_name, end=end)
     
-    if savefig :
-        plt.savefig('ex.eps', format='eps')    
+    #if savefig :
+    #    plt.savefig('ex.eps', format='eps')    
     return ;
     
 if __name__ == '__main__' :

@@ -28,7 +28,7 @@ compress.py run???? [options]
 
 M. Le Verge--Serandour
 Adapted from submit.py in chain_lumen
-Creation : 01/04/18
+Creation : April 2020
 """
 
 

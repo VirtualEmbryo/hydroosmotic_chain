@@ -10,7 +10,7 @@ submit.py script.py outdir???? [options]
     ---------
     script.py : python file
         The script to execute for data analysis. Must be a python script (.py).
-    config???? : list of directories
+    outdir???? : list of directories
         List of directories where the script.py has to be executed. Must contains a .conf file
 
     Options

@@ -1,3 +1,53 @@
+"""
+flux.py library, containing analytical expressions of the functions 
+used to integrate the ODE describing hydraulic or hydroosmotic lumens.
+
+
+    Contains
+    -------
+        Hydraulic chain
+    func_Lj_hydraulic   : ODE for length of hydraulic lumen
+    func_JLh            : Left-hydraulic flux for hydraulic lumen
+    func_JRh            : Right-hydraulic flux for hydraulic lumen
+
+        Hydroosmotic chain
+    func_Lj             : ODE for length of hydroosmotic lumen
+    func_Nj             : ODE for number of ions of hydroosmotic lumen
+    func_JLs            : Left-solute flux for hydroosmotic lumen
+    func_JRs            : Right-solute flux for hydroosmotic lumen
+    func_JLv            : Left-solvent flux for hydroosmotic lumen
+    func_JRv            : Right-solvent flux for hydroosmotic lumen
+    lam                 : Function lambda(x) from Supplementary information
+    mu                  : Function mu(x) from Supplementary information
+    I_1_minus_v2        : Function I_1^-(x) from Supplementary information
+    I_2_minus_v2        : Function I_2^-(x) from Supplementary information
+    I_1_plus_v2         : Function I_1^+(x) from Supplementary information
+    I_2_plus_v2         : Function I_2^+(x) from Supplementary information
+    func_deltaP_j       : Pressure jump of lumen j
+    func_deltaC_j       : Concentration jump of lumen j
+
+    func_Js_MF : Calculate the mean field flux of solute. Not used.
+    func_Jv_MF : Calculate the mean field flux of solute. Not used.
+
+    Requirements
+    ------------
+        Python libraries
+    os
+    sys
+    warnings
+    time
+    numpy (np)
+        
+        Homemade libraries
+    network
+    topology
+    functions
+    
+    
+    NB : this file also inclues a shut-down of warning for RunTimeWarning.
+"""
+
+
 import numpy as np
 import os
 import sys
@@ -142,6 +192,40 @@ def func_JRh(i_left, i_right, L_vec, ell_vec, chain) :
 # ========================================================================
 
 def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
+    """Calculate the length variation of the lumen j, such as :
+    
+        $$\frac{d L_j}{dt} = \frac{1}{\tau_v}\left( \mu_j \nu_j (\mu_j  \frac{N_j}{L_j^2} - 1 - \frac{\epsilon_j}{L_j}) - \frac{\mu_j}{2 L_j} J_j^v \right)$$
+    
+        where
+        j       : refers to the index of the considered lumen, i and k are its left and right neighbors.
+        Lj, Nj  : are the length and number of ions of the lumen j
+        eps_j   : physical parameter comparing hydraulic versus osmotic pressure.
+        Jjv     : total flux of solvent coming from the bridges (left and right)
+        tauv    : typical hydraulic relaxation time.
+        mu_j, nu_j are geometrical constants    
+    
+    
+        Parameters
+        ----------
+        index : int
+            Index of the lumen
+        t : float
+            Current time.
+        L_vec : dict
+            Dictionnary of the lengths of lumens to use to calculate the fluxes.
+        N_vec : dict
+            Dictionnary of the lengths to use to calculate the fluxes.
+        ell_vec : dict
+            Dictionnary of the lengths of bridges to use to calculate the fluxes.
+        chain : chain
+            The chain-object.
+    
+        Returns
+        -------
+        dLjdt : float 
+            Variation of dL_j / dt
+    """
+    
     # CALCULATE THE FLUXES
     i, k = net.leftright_neighbors(index, chain)
     
@@ -159,6 +243,39 @@ def func_Lj(index, t, L_vec, N_vec, ell_vec, chain) :
     return (mu_j*nu_j*(mu_j * Nj / (Lj*Lj) - 1. - eps_j / Lj) - mu_j * (Jjv) / (2.*Lj))/chain.tauv
     
 def func_Nj(index, t, L_vec, N_vec, ell_vec, chain) :
+    """Calculate the number of ions variation of the lumen j, such as :
+    
+        $$\frac{d N_j}{dt} = \frac{1}{\tau_s}\left( 2 \nu_j L_j (1 - \mu_j  \frac{N_j}{L_j^2} + j^a_i) - J_j^s \right)$$
+    
+        where
+        j       : refers to the index of the considered lumen, i and k are its left and right neighbors.
+        Lj, Nj  : are the length and number of ions of the lumen j
+        j^a_i   : active pumping of the lumen j (denoted ca below)
+        Jjs     : total flux of solute coming from the bridges (left and right)
+        taus    : typical solute relaxation time.
+        mu_j, nu_j are geometrical constants    
+    
+    
+        Parameters
+        ----------
+        index : int
+            Index of the lumen
+        t : float
+            Current time.
+        L_vec : dict
+            Dictionnary of the lengths of lumens to use to calculate the fluxes.
+        N_vec : dict
+            Dictionnary of the lengths to use to calculate the fluxes.
+        ell_vec : dict
+            Dictionnary of the lengths of bridges to use to calculate the fluxes.
+        chain : chain
+            The chain-object.
+    
+        Returns
+        -------
+        dNjdt : float 
+            Variation of dN_j / dt
+    """
     # CALCULATE THE FLUXES
     i, k = net.find_neighbors(index, chain.bridges_dict)
 
@@ -178,7 +295,7 @@ def func_Nj(index, t, L_vec, N_vec, ell_vec, chain) :
         func = chain.pumping_func
         args = chain.pumping_args
         pos = chain.lumens_dict[index].pos
-        x1, x2 = pos - Lj, pos + Lj
+        x1, x2 = pos - Lj, pos + Lj                         # positions of the left, right borders of the lumen j
         ca = functions.integrate(func, x1, x2, args)        # pumping of the lumen only
     except :
         ca = chain.lumens_dict[index].ca
@@ -187,14 +304,19 @@ def func_Nj(index, t, L_vec, N_vec, ell_vec, chain) :
     
 ### OSMOTIC FLUXES
 def func_JLs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
+    """
+    Solute flux coming from the left bridge of the lumen i_right
+    
+    Equation is detailed in the Supplementary Information (Eq. 20b)
+    
+    """
+    # Fluxes from the border are considered to be zero.
     if chain.leaks == False : 
         if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
             return 0.
+            
     b = net.find_bridge(i_left, i_right, chain)             # index of the bridge between i and j
     ellt = ell_vec[b]                                       # length of the bridge b
-    
-    # Total length between i and j (for normalization of the flux)
-    #L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
     # SCREENING RATIOS
     chis  = chain.xis / ellt
@@ -209,25 +331,28 @@ def func_JLs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
         args = chain.pumping_args
         x1 = chain.lumens_dict[i_left].pos + chain.lumens_dict[i_left].length
         x2 = chain.lumens_dict[i_right].pos-chain.lumens_dict[i_right].length
-        ca_LR = functions.integrate(func, x1, x2, args)
+        ca_LR = functions.integrate(func, x1, x2, args)                         # Total pumping over the bridge b
     except :
         ca_LR = chain.bridges_dict[b].ca
     
     dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
     dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
     
-    #return chis*ellt/L0 * ((dC_R-ca_LR)*np.cosh(1./chis) - (dC_L-ca_LR)) / np.sinh(1./chis) ### THIS IS WRONG
     return chain.xis * ((dC_R-ca_LR)*np.cosh(1./chis) - (dC_L-ca_LR)) / np.sinh(1./chis)
     
 def func_JRs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
+    """
+    Solute flux coming from the right bridge of the lumen i_left
+    
+    Equation is detailed in the Supplementary Information (Eq. 20a)
+    
+    """
+    # Fluxes from the border are considered to be zero.
     if chain.leaks == False : 
         if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
             return 0.
     b = net.find_bridge(i_left, i_right, chain)             # index of the bridge between i and j
     ellt = ell_vec[b]                                       # length of the bridge b
-    
-    # Total length between i and j (for normalization of the flux)
-    #L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
     # SCREENING RATIO
     chis  = chain.xis / ellt
@@ -242,27 +367,30 @@ def func_JRs(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
         args = chain.pumping_args
         x1 = chain.lumens_dict[i_left].pos + chain.lumens_dict[i_left].length
         x2 = chain.lumens_dict[i_right].pos-chain.lumens_dict[i_right].length
-        ca_LR = functions.integrate(func, x1, x2, args)
+        ca_LR = functions.integrate(func, x1, x2, args)                         # Total pumping over the bridge b
     except :
         ca_LR = chain.bridges_dict[b].ca
     
     dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)   
     dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
     
-    #return chis*ellt/L0 * ((dC_L-ca_LR)*np.cosh(1./chis) - (dC_R-ca_LR)) / np.sinh(1./chis) ### THIS IS WRONG
     return chain.xis * ((dC_L-ca_LR)*np.cosh(1./chis) - (dC_R-ca_LR)) / np.sinh(1./chis)
 
 ### HYDRAULIC FLUXES
 def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
+    """
+    Solvent flux coming from the left bridge of the lumen i_right
+    
+    Equation is detailed in the Supplementary Information (Eq. 22b)
+    
+    """
+    # Fluxes from the border are considered to be zero.
     if chain.leaks == False : 
         if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
             return 0.
     
     b = net.find_bridge(i_left, i_right, chain)             # index of the bridge between i and j
     ellt = ell_vec[b]                                       # length of the bridge b
-    
-    # Total length between i and j (for normalization of the flux)
-    #L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
     # SCREENING RATIOS
     chis  = chain.xis / ellt
@@ -280,13 +408,12 @@ def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
         args = chain.pumping_args
         x1 = chain.lumens_dict[i_left].pos + chain.lumens_dict[i_left].length
         x2 = chain.lumens_dict[i_right].pos-chain.lumens_dict[i_right].length
-        ca_LR = functions.integrate(func, x1, x2, args)
+        ca_LR = functions.integrate(func, x1, x2, args)                         # Total pumping over the bridge b
     except :
         ca_LR = chain.bridges_dict[b].ca
     
     dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
     dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
-    
     
     P_L  = func_deltaP_j(Lj=L_vec[i_left], eps_j=eps_L, index=i_left)
     P_R  = func_deltaP_j(Lj=L_vec[i_right], eps_j=eps_R, index=i_right)
@@ -294,19 +421,22 @@ def func_JLv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
     la = lam(-0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     mb = mu(0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     
-    #return chiv*ellt/L0 * ((P_R-mb)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_L-la)/np.sinh(1./chiv) - mb) ### THIS IS WRONG
     return chain.xiv * ((P_R-mb)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_L-la)/np.sinh(1./chiv) - mb)
        
 def func_JRv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
+    """
+    Solvent flux coming from the right bridge of the lumen i_left
+    
+    Equation is detailed in the Supplementary Information (Eq. 22b)
+    
+    """
+    # Fluxes from the border are considered to be zero.
     if chain.leaks == False : 
         if i_left == 0 or i_left == -1 or i_right == 0 or i_right == -1 :
             return 0.
     
     b = net.find_bridge(i_left, i_right, chain)                 # index of the bridge between i and j
     ellt = ell_vec[b]                                           # length of the bridge b
-    
-    # Total length between i and j (for normalization of the flux)
-    #L0   = L_vec[i_right] + L_vec[i_left] + ellt
     
     # SCREENING RATIOS
     chis  = chain.xis / ellt
@@ -324,36 +454,45 @@ def func_JRv(i_left, i_right, L_vec, N_vec, ell_vec, chain) :
         args = chain.pumping_args
         x1 = chain.lumens_dict[i_left].pos + chain.lumens_dict[i_left].length
         x2 = chain.lumens_dict[i_right].pos - chain.lumens_dict[i_right].length
-        ca_LR = functions.integrate(func, x1, x2, args)
+        ca_LR = functions.integrate(func, x1, x2, args)                         # Total pumping over the bridge b
     except :
         ca_LR = chain.bridges_dict[b].ca
 
-    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left) ###
-    dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right) ###
+    dC_L = func_deltaC_j(Nj=N_vec[i_left], Lj=L_vec[i_left], mu_j=mu_L, index=i_left)
+    dC_R = func_deltaC_j(Nj=N_vec[i_right], Lj=L_vec[i_right], mu_j=mu_R, index=i_right)
     
-    P_L  = func_deltaP_j(Lj=L_vec[i_left], eps_j=eps_L, index=i_left) ###
-    P_R  = func_deltaP_j(Lj=L_vec[i_right], eps_j=eps_R, index=i_right) ###
+    P_L  = func_deltaP_j(Lj=L_vec[i_left], eps_j=eps_L, index=i_left)
+    P_R  = func_deltaP_j(Lj=L_vec[i_right], eps_j=eps_R, index=i_right)
     
     la = lam(-0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     mb = mu(0.5, chiv, chis, dC_L, dC_R, ca_LR)*np.exp(-0.5/chiv)
     
-    #return chiv*ellt/L0 * ((P_L-la)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_R-mb)/np.sinh(1./chiv) - la) ### THIS IS WRONG
     return chain.xiv * ((P_L-la)*np.cosh(1./chiv)/np.sinh(1./chiv) - (P_R-mb)/np.sinh(1./chiv) - la)
 
 ### FUNCTIONS
 def lam(x, chiv, chis, dC_L, dC_R, ca_LR) :
+    """
+    Function lambda(x) as detailed in the Supplementary Information
+    """
     la = 0.5*ca_LR * (np.exp(-x/chiv) - np.exp(-0.5/chiv))
     l_L = (dC_L-ca_LR) * I_1_minus_v2(x, chiv, chis) / (2.*chiv*np.sinh(1./chis))
     l_R = (dC_R-ca_LR) * I_2_minus_v2(x, chiv, chis) / (2.*chiv*np.sinh(1./chis))
     return la + l_L - l_R
 
 def mu(x, chiv, chis, dC_L, dC_R, ca_LR) :
+    """
+    Function lambda(x) as detailed in the Supplementary Information
+    """
     ma = 0.5*ca_LR * (np.exp(x/chiv) - np.exp(-0.5/chiv))
     m_L = (dC_L-ca_LR) * I_1_plus_v2(x, chiv, chis) / (2.*chiv*np.sinh(1./chis))
     m_R = (dC_R-ca_LR) * I_2_plus_v2(x, chiv, chis) / (2.*chiv*np.sinh(1./chis))
     return ma - m_L + m_R
     
 def I_1_minus_v2(x, Xv, Xs) :
+    """
+    Function I_1^-(x),  as detail in the Supplementary Information.
+    Solution was found using WolframAlpha
+    """
     c1, s1 = np.cosh(1./Xs), np.sinh(1./Xs)
     cmx, smx = np.cosh((x-0.5)/Xs), np.sinh((x-0.5)/Xs)
     
@@ -363,6 +502,10 @@ def I_1_minus_v2(x, Xv, Xs) :
     return Xv*Xs*(np.exp(-x/Xv)*(Xv*cmx + Xs*smx) - Xv*np.exp(-0.5/Xv))/ ( (Xv-Xs)*(Xv+Xs) )
 
 def I_2_minus_v2(x, Xv, Xs) :
+    """
+    Function I_2^-(x),  as detail in the Supplementary Information.
+    Solution was found using WolframAlpha
+    """
     c1, s1 = np.cosh(1./Xs), np.sinh(1./Xs)
     cpx, spx = np.cosh((x+0.5)/Xs), np.sinh((x+0.5)/Xs)
     
@@ -372,6 +515,10 @@ def I_2_minus_v2(x, Xv, Xs) :
     return Xv*Xs*(np.exp(-x/Xv)*(Xv*cpx + Xs*spx) - np.exp(-0.5/Xv)*(Xv*c1 + Xs*s1))/ ( (Xv-Xs)*(Xv+Xs) )
 
 def I_1_plus_v2(x, Xv, Xs) :
+    """
+    Function I_1^+(x),  as detail in the Supplementary Information.
+    Solution was found using WolframAlpha
+    """
     c1, s1 = np.cosh(1./Xs), np.sinh(1./Xs)
     cmx, smx = np.cosh((x-0.5)/Xs), np.sinh((x-0.5)/Xs)
     
@@ -381,6 +528,10 @@ def I_1_plus_v2(x, Xv, Xs) :
     return Xv*Xs*(np.exp(x/Xv)*(Xv*cmx - Xs*smx) - np.exp(-0.5/Xv)*(Xv*c1 + Xs*s1))/ ( (Xv-Xs)*(Xv+Xs) )
 
 def I_2_plus_v2(x, Xv, Xs) :
+    """
+    Function I_2^+(x),  as detail in the Supplementary Information.
+    Solution was found using WolframAlpha
+    """
     c1, s1 = np.cosh(1./Xs), np.sinh(1./Xs)
     cpx, spx = np.cosh((x+0.5)/Xs), np.sinh((x+0.5)/Xs)
     
@@ -393,7 +544,7 @@ def func_deltaC_j(Nj, Lj, mu_j, index) :
     """
     func_deltaC_j(Nj, Lj, mu_j)
     
-        Calculate the concentration of lumen j.
+        Calculate the concentration jump of lumen j.
     
         Parameters
         ----------
@@ -410,7 +561,6 @@ def func_deltaC_j(Nj, Lj, mu_j, index) :
             Value of the concentration in lumen j.
     """
     if index != 0 and index != -1 :
-        # delta C
         return mu_j * Nj / (Lj*Lj) - 1.
     else : 
         return 0.
@@ -434,10 +584,8 @@ def func_deltaP_j(Lj, eps_j, index) :
             Value of the pressure in lumen j.
     """
     if index != 0 and index != -1 :
-        #return eps_j / Lj - 1.          # Correction 4/05/2020
-        return eps_j / Lj               # Before the correction
+        return eps_j / Lj
     else : 
-        #print('Leaks')
         return 0.
         
 # ========================================================================
