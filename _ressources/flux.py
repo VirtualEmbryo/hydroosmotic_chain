@@ -39,7 +39,7 @@ used to integrate the ODE describing hydraulic or hydroosmotic lumens.
     numpy (np)
         
         Homemade libraries
-    network
+    network (net)
     topology
     functions
     

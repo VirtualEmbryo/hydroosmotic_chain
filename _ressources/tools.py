@@ -1,3 +1,30 @@
+"""
+tools.py is a lbrary containg generic tools used for the chain : graphics, functions, etc.
+
+    Contains
+    --------
+        Log file
+    write_log       :
+    add_end_time    :
+    
+    get_winner
+    
+    Requirements
+    ------------
+        Python libraries
+    os
+    sys
+    numpy (np)
+    time
+    getpass
+    socket
+    matplotlib.pyplot (for graphical functions only)s
+
+        Homemade libraries
+    functions
+"""
+
+
 import numpy as np
 import os
 import sys
@@ -26,7 +53,10 @@ except :
 # ========================================================================
 
 def write_log(outdir, confname, args) :
+    """
+    write_log(outdir, confname, args)
     
+    """
     username = getpass.getuser()
     hostname = socket.gethostname()
     start_time = time.ctime()
@@ -47,90 +77,17 @@ def write_log(outdir, confname, args) :
     f.write('start    : ' + str(start_time) + '\n')
     
 def add_end_time(outdir, end) :
+    """
+    add_end_time(outdir, end)
+    
+    """
     end_time = time.ctime()
     f = open(os.path.join(outdir, 'log.txt'), 'a')
     
     f.write('status   : ' + str(end) + '\n')
     f.write('stop     : ' + str(end_time))
     
-# ========================================================================
-# ============================ Functions =================================
-# ========================================================================
 
-def autocorrFFT(x) :
-    """
-    autocorrFFT(x)
-
-        Compute the autocorrelation function of the vector x, using the Wiener-Khinchin theorem.
-
-        Parameters
-        ----------
-        x : array
-            Input signal.
-        Returns
-        -------
-        res : array
-            Autocorrelation of the signal.
-    """
-    N = len(x)
-    F = np.fft.fft(x, n = 2*N) # 2*N because zero-padding
-    PSD = F * F.conjugate()
-    res = np.fft.ifft(PSD)
-    res = (res[:N]).real
-    n = N * np.ones(N) - np.arange(0, N) # generates array of  1/(N-m), m = 0, ..., N-1
-    return res / n
-    
-def msd_fft1d(x):
-    """
-    msd_fft1d(x)
-
-        Compute the Mean Square Displacement of a trajectory x, using Fast Fourier Transform and Autocorrelation function.
-
-        Parameters
-        ----------
-        x : array
-            Trajectory array, in 1 dimension
-        Returns
-        -------
-        MSD : array
-            MSD of the trajectory.
-    """
-    N=len(x)
-    D=np.square(x)
-    D=np.append(D,0)
-    S2=autocorrFFT(x)
-    Q=2*D.sum()
-    S1=np.zeros(N)
-    for m in range(N):
-        Q=Q-D[m-1]-D[N-m]
-        S1[m]=Q/(N-m)
-    return S1-2*S2
-    
-
-# ========================================================================
-# ========================== Trajectories ================================
-# ========================================================================
-
-def position_lumen(index, lumens) :
-    return lumens[np.argwhere(lumens[:, 0]==index), 2]
-    
-def positions_list(index, lumens_list) :
-    pos = []
-    #print lumens_list[0][1]
-    for t in range(len(lumens_list)) :
-        if index in lumens_list[t][1][:, 0] :
-            step = lumens_list[t][0]
-            pos += [[step, position_lumen(index, lumens_list[t][1])[0, 0]]]
-    return np.array(pos)
-
-def plot_trajectories(lumens_list) :
-    plt.figure(figsize=(8, 8))
-    for i in range(1, int(np.max(lumens_list[:, 0]))) :
-        plt.scatter(positions_list(i, lumens_list)[:, 0], positions_list(i, lumens_list)[:, 1], label = i, s=1)
-    plt.xlabel('Time [a.u.]')
-    plt.ylabel('Positions [a.u.]')
-    plt.show()
-    
 # ========================================================================
 # ============================ Profile ===================================
 # ========================================================================
@@ -555,7 +512,7 @@ def calc_A_tot(L) :
     return time, A_tot
     
 # ========================================================================
-# ============================= Plots ====================================
+# ========================= Chemograph ===================================
 # ========================================================================
 
 def plot_evolution(L, nions, ell, show_totalarea=False, savefig=False, savename='graph.eps', figsize=(7, 7), x_logscale=False, y_logscale=False, show_meanlength = True, title='', xlim=[], nbins=0) :
