@@ -11,7 +11,7 @@
 	* gen_config.py : generates configurations files (.conf) from templates (.conf.tpl) ;
 	* lumen_class.py : library that contains the definition of the objects chain, lumen and bridge ;
 	* network.py : library of useful functions to work on graphs (nearest neighbors, etc) :
-	* submit.py : sends simulations to a cluster using SLURM language ;
+	* submit.py : sends simulations to a cluster using SLURM ;
 	* tools.py : library of diverse useful functions
 	* topology.py : library of useful functions to work on the topology of the graph (merge and disappear functions are defined there)
 
@@ -22,4 +22,4 @@
 
 # About
 ## Authors
-Developped by Mathieu Le Verge--Serandour and Hervé Turlier, 2019
+Developed by Mathieu Le Verge--Serandour and Hervé Turlier, 2020
