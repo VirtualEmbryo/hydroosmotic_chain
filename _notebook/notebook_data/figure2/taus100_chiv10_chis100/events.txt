@@ -1,0 +1,2 @@
+Time 18.122257635126097 : lumen 2 disappears
+Time 18.238966 : end. One lumen left.

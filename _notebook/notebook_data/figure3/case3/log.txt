@@ -1,0 +1,10 @@
+username : mathieuleverge
+hostname : TURLIER2-CIRB.local
+wdir : /Users/mathieuleverge/git/chain_lumen/_data/pumping/2lumens/chis1/chiv6.813e-01/run0006
+
+config   : /Users/mathieuleverge/git/chain_lumen/_data/pumping/2lumens/chis1/chiv6.813e-01/run0006/config.conf
+args     : ['-r', '-v', '-e']
+
+start    : Fri Jun 12 16:52:33 2020
+status   : 2
+stop     : Fri Jun 12 16:52:57 2020

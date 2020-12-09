@@ -1,0 +1,10 @@
+username : mathieuleverge
+hostname : TURLIER2-CIRB.local
+wdir : out
+
+config   : /Users/mathieuleverge/git/hydroosmotic_chain/_configfiles/100lumens/config_N100.conf
+args     : ['-v']
+
+start    : Mon Dec  7 16:36:30 2020
+status   : 1
+stop     : Mon Dec  7 16:41:18 2020

@@ -29,6 +29,8 @@ in the form of numpy arrays.
     ------------
         Python libraries
     numpy (np)
+
+Mathieu Le Verge--Serandour, 2020
 """
 
 import numpy as np
@@ -175,12 +177,14 @@ def gen_uniform_conf(M, avg_size=0.5, std_size=0.1, avg_dist = 1., std_dist=0.1,
             Number of lumens in the chain. 
             Note that the total number of lumens will be M+2 since there are also the borders, 0 and -1.
         avg_size : float, optional, default : 0.5
-            Average size of a lumen. Mean of a normal distribution.
+            Size of a lumen. Mean of a normal distribution.
         std_size : float, optional, default : 0.1
+            Not useful here.
             Standard deviation for the size of a lumen. Standard deviation of a normal distribution.
         avg_dist : float, optional, default : 1.
-            Average distance between two lumens. Mean of a normal distribution.
+            Distance between two lumens. Mean of a normal distribution.
         std_dist : float, optional, default : 0.1
+            Not useful here.
             Standard deviation for the distance between two lumens. Standard deviation of a normal distribution.
     
         dist_to_left : float, optional, default : 0.1
@@ -327,12 +331,12 @@ def find_bridge(i, j, chain) :
             Index of the connecting bridge, if it exists
     """
     B = chain.bridges_dict
+    br = None
     for b in B.keys() :
         if (B[b].lumen1 == i and B[b].lumen2 == j) or (B[b].lumen1 == j and B[b].lumen2 == i) :
             br = b
-        else :
-            print('No bridge found to connect these lumens ('+str(i)+', '+str(j)+') !')
-            return None
+    if br == None :
+        print('No bridge found to connect these lumens ('+str(i)+', '+str(j)+') !')
     return br
     
 # ========================================================================
@@ -386,7 +390,6 @@ def gen_osmotic_equilibrium(L_list, M, nu_list, mu_list) :
     N_list = np.zeros(M)
     for m in range(M) :
         N_list[m] = osmotic_equilibrium(L_list[m], nu_list[m], mu_list[m])
-
     return N_list
 
 def gen_ion_array(lumens, theta=np.pi/3., equilibrium = True, avg_nion=0.5, std_nion=1e-2) :

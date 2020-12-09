@@ -1,0 +1,2 @@
+Time 13.393186218037314 : lumen 1 disappears
+Time 13.493679 : winner (C) is lumen 2

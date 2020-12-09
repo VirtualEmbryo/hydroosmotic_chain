@@ -36,6 +36,7 @@ that happen on a chain of micro-lumens.
     network (net)
     lumenclass (lc)
     
+Mathieu Le Verge--Serandour, 2020
 """
 
 

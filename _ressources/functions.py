@@ -17,6 +17,7 @@ active pumping profile.
     numpy
     scipy.integrate.quad
 
+Mathieu Le Verge--Serandour, 2020
 """
 
 from numpy import exp, where, ones

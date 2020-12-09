@@ -1,0 +1,216 @@
+======= CHAIN =======
+Type         : hydroosmotic
+Total length : 1156.1496896870494
+Current Time : 0
+Screening lengths : 
+        xi_s = 49.556327855360166
+        xi_v = 4955.632785536016
+Permeation times :
+       tau_s = 1.0
+       tau_v = 1.0
+======= LUMENS =======
+Nb lumens : 100
+Lumen 0 is at position 0.000 with length 0.000 and 0.000 ions with pumping 0.000
+Lumen 1 is at position 10.792 with length 0.792 and 1.028 ions with pumping 0.000
+Lumen 2 is at position 20.218 with length 0.853 and 1.193 ions with pumping 0.000
+Lumen 3 is at position 31.649 with length 0.872 and 1.245 ions with pumping 0.000
+Lumen 4 is at position 44.358 with length 0.888 and 1.290 ions with pumping 0.000
+Lumen 5 is at position 58.281 with length 0.683 and 0.764 ions with pumping 0.000
+Lumen 6 is at position 67.732 with length 0.807 and 1.067 ions with pumping 0.000
+Lumen 7 is at position 81.264 with length 0.666 and 0.727 ions with pumping 0.000
+Lumen 8 is at position 92.932 with length 0.768 and 0.967 ions with pumping 0.000
+Lumen 9 is at position 103.019 with length 0.900 and 1.326 ions with pumping 0.000
+Lumen 10 is at position 114.286 with length 0.690 and 0.781 ions with pumping 0.000
+Lumen 11 is at position 122.305 with length 0.846 and 1.172 ions with pumping 0.000
+Lumen 12 is at position 134.888 with length 0.779 and 0.995 ions with pumping 0.000
+Lumen 13 is at position 145.169 with length 0.804 and 1.059 ions with pumping 0.000
+Lumen 14 is at position 156.966 with length 0.738 and 0.893 ions with pumping 0.000
+Lumen 15 is at position 169.675 with length 0.831 and 1.132 ions with pumping 0.000
+Lumen 16 is at position 182.365 with length 0.855 and 1.197 ions with pumping 0.000
+Lumen 17 is at position 193.225 with length 0.748 and 0.916 ions with pumping 0.000
+Lumen 18 is at position 202.542 with length 0.823 and 1.108 ions with pumping 0.000
+Lumen 19 is at position 217.520 with length 0.723 and 0.857 ions with pumping 0.000
+Lumen 20 is at position 226.925 with length 0.840 and 1.156 ions with pumping 0.000
+Lumen 21 is at position 237.332 with length 0.781 and 1.000 ions with pumping 0.000
+Lumen 22 is at position 248.522 with length 0.787 and 1.014 ions with pumping 0.000
+Lumen 23 is at position 260.739 with length 0.751 and 0.924 ions with pumping 0.000
+Lumen 24 is at position 271.940 with length 0.850 and 1.183 ions with pumping 0.000
+Lumen 25 is at position 285.917 with length 0.842 and 1.160 ions with pumping 0.000
+Lumen 26 is at position 300.000 with length 0.805 and 1.060 ions with pumping 0.000
+Lumen 27 is at position 312.820 with length 0.721 and 0.852 ions with pumping 0.000
+Lumen 28 is at position 326.137 with length 0.752 and 0.926 ions with pumping 0.000
+Lumen 29 is at position 337.059 with length 0.802 and 1.054 ions with pumping 0.000
+Lumen 30 is at position 351.339 with length 0.768 and 0.967 ions with pumping 0.000
+Lumen 31 is at position 359.833 with length 0.865 and 1.226 ions with pumping 0.000
+Lumen 32 is at position 375.054 with length 0.750 and 0.922 ions with pumping 0.000
+Lumen 33 is at position 384.493 with length 0.751 and 0.925 ions with pumping 0.000
+Lumen 34 is at position 395.826 with length 0.651 and 0.694 ions with pumping 0.000
+Lumen 35 is at position 404.902 with length 0.771 and 0.974 ions with pumping 0.000
+Lumen 36 is at position 416.801 with length 0.735 and 0.885 ions with pumping 0.000
+Lumen 37 is at position 425.278 with length 0.713 and 0.832 ions with pumping 0.000
+Lumen 38 is at position 437.708 with length 0.784 and 1.007 ions with pumping 0.000
+Lumen 39 is at position 450.521 with length 0.795 and 1.036 ions with pumping 0.000
+Lumen 40 is at position 464.280 with length 0.771 and 0.973 ions with pumping 0.000
+Lumen 41 is at position 476.478 with length 0.756 and 0.936 ions with pumping 0.000
+Lumen 42 is at position 486.911 with length 0.862 and 1.217 ions with pumping 0.000
+Lumen 43 is at position 497.236 with length 0.770 and 0.970 ions with pumping 0.000
+Lumen 44 is at position 508.156 with length 0.774 and 0.982 ions with pumping 0.000
+Lumen 45 is at position 522.630 with length 0.797 and 1.040 ions with pumping 0.000
+Lumen 46 is at position 537.081 with length 0.856 and 1.201 ions with pumping 0.000
+Lumen 47 is at position 550.316 with length 0.728 and 0.868 ions with pumping 0.000
+Lumen 48 is at position 558.435 with length 0.793 and 1.031 ions with pumping 0.000
+Lumen 49 is at position 568.090 with length 0.860 and 1.211 ions with pumping 0.000
+Lumen 50 is at position 579.766 with length 0.769 and 0.969 ions with pumping 0.000
+Lumen 51 is at position 588.737 with length 0.685 and 0.769 ions with pumping 0.000
+Lumen 52 is at position 597.854 with length 0.862 and 1.217 ions with pumping 0.000
+Lumen 53 is at position 608.552 with length 0.703 and 0.809 ions with pumping 0.000
+Lumen 54 is at position 621.615 with length 0.792 and 1.028 ions with pumping 0.000
+Lumen 55 is at position 634.082 with length 0.848 and 1.177 ions with pumping 0.000
+Lumen 56 is at position 646.089 with length 0.838 and 1.151 ions with pumping 0.000
+Lumen 57 is at position 658.684 with length 0.666 and 0.728 ions with pumping 0.000
+Lumen 58 is at position 667.091 with length 0.675 and 0.746 ions with pumping 0.000
+Lumen 59 is at position 678.338 with length 0.683 and 0.764 ions with pumping 0.000
+Lumen 60 is at position 684.952 with length 0.671 and 0.738 ions with pumping 0.000
+Lumen 61 is at position 694.663 with length 0.707 and 0.818 ions with pumping 0.000
+Lumen 62 is at position 704.699 with length 0.804 and 1.059 ions with pumping 0.000
+Lumen 63 is at position 717.614 with length 0.821 and 1.105 ions with pumping 0.000
+Lumen 64 is at position 731.874 with length 0.916 and 1.374 ions with pumping 0.000
+Lumen 65 is at position 745.369 with length 0.923 and 1.396 ions with pumping 0.000
+Lumen 66 is at position 761.524 with length 0.826 and 1.117 ions with pumping 0.000
+Lumen 67 is at position 770.889 with length 0.799 and 1.045 ions with pumping 0.000
+Lumen 68 is at position 782.936 with length 0.791 and 1.025 ions with pumping 0.000
+Lumen 69 is at position 795.080 with length 0.850 and 1.184 ions with pumping 0.000
+Lumen 70 is at position 810.721 with length 0.838 and 1.149 ions with pumping 0.000
+Lumen 71 is at position 824.902 with length 0.731 and 0.875 ions with pumping 0.000
+Lumen 72 is at position 838.038 with length 0.812 and 1.079 ions with pumping 0.000
+Lumen 73 is at position 851.840 with length 0.780 and 0.997 ions with pumping 0.000
+Lumen 74 is at position 863.043 with length 0.725 and 0.862 ions with pumping 0.000
+Lumen 75 is at position 871.383 with length 0.775 and 0.985 ions with pumping 0.000
+Lumen 76 is at position 883.576 with length 0.817 and 1.093 ions with pumping 0.000
+Lumen 77 is at position 893.686 with length 0.780 and 0.997 ions with pumping 0.000
+Lumen 78 is at position 904.683 with length 0.778 and 0.991 ions with pumping 0.000
+Lumen 79 is at position 914.322 with length 0.805 and 1.060 ions with pumping 0.000
+Lumen 80 is at position 923.940 with length 0.793 and 1.030 ions with pumping 0.000
+Lumen 81 is at position 937.097 with length 0.708 and 0.822 ions with pumping 0.000
+Lumen 82 is at position 945.999 with length 0.637 and 0.664 ions with pumping 0.000
+Lumen 83 is at position 958.527 with length 0.722 and 0.853 ions with pumping 0.000
+Lumen 84 is at position 971.011 with length 0.890 and 1.296 ions with pumping 0.000
+Lumen 85 is at position 981.100 with length 0.854 and 1.196 ions with pumping 0.000
+Lumen 86 is at position 990.734 with length 0.805 and 1.062 ions with pumping 0.000
+Lumen 87 is at position 1002.699 with length 0.754 and 0.931 ions with pumping 0.000
+Lumen 88 is at position 1014.263 with length 0.731 and 0.875 ions with pumping 0.000
+Lumen 89 is at position 1024.804 with length 0.761 and 0.948 ions with pumping 0.000
+Lumen 90 is at position 1034.419 with length 0.639 and 0.668 ions with pumping 0.000
+Lumen 91 is at position 1044.582 with length 0.643 and 0.677 ions with pumping 0.000
+Lumen 92 is at position 1058.959 with length 0.733 and 0.881 ions with pumping 0.000
+Lumen 93 is at position 1070.152 with length 0.719 and 0.848 ions with pumping 0.000
+Lumen 94 is at position 1082.710 with length 0.742 and 0.902 ions with pumping 0.000
+Lumen 95 is at position 1093.108 with length 0.715 and 0.836 ions with pumping 0.000
+Lumen 96 is at position 1103.410 with length 0.693 and 0.787 ions with pumping 0.000
+Lumen 97 is at position 1113.266 with length 0.640 and 0.670 ions with pumping 0.000
+Lumen 98 is at position 1125.293 with length 0.724 and 0.858 ions with pumping 0.000
+Lumen 99 is at position 1133.542 with length 0.710 and 0.825 ions with pumping 0.000
+Lumen 100 is at position 1145.316 with length 0.834 and 1.140 ions with pumping 0.000
+Lumen -1 is at position 1156.150 with length 0.000 and 0.000 ions with pumping 0.000
+======= BRIDGES ======
+Bridge 0 : (0, 1) has length 10.0 with pumping 0.000
+Bridge 1 : (1, 2) has length 7.78 with pumping 0.000
+Bridge 2 : (2, 3) has length 9.7065 with pumping 0.000
+Bridge 3 : (3, 4) has length 10.949 with pumping 0.000
+Bridge 4 : (4, 5) has length 12.352 with pumping 0.000
+Bridge 5 : (5, 6) has length 7.9611 with pumping 0.000
+Bridge 6 : (6, 7) has length 12.059 with pumping 0.000
+Bridge 7 : (7, 8) has length 10.233 with pumping 0.000
+Bridge 8 : (8, 9) has length 8.4186 with pumping 0.000
+Bridge 9 : (9, 10) has length 9.6768 with pumping 0.000
+Bridge 10 : (10, 11) has length 6.4829 with pumping 0.000
+Bridge 11 : (11, 12) has length 10.958 with pumping 0.000
+Bridge 12 : (12, 13) has length 8.6979 with pumping 0.000
+Bridge 13 : (13, 14) has length 10.254 with pumping 0.000
+Bridge 14 : (14, 15) has length 11.14 with pumping 0.000
+Bridge 15 : (15, 16) has length 11.004 with pumping 0.000
+Bridge 16 : (16, 17) has length 9.2573 with pumping 0.000
+Bridge 17 : (17, 18) has length 7.746 with pumping 0.000
+Bridge 18 : (18, 19) has length 13.432 with pumping 0.000
+Bridge 19 : (19, 20) has length 7.8423 with pumping 0.000
+Bridge 20 : (20, 21) has length 8.7852 with pumping 0.000
+Bridge 21 : (21, 22) has length 9.6218 with pumping 0.000
+Bridge 22 : (22, 23) has length 10.679 with pumping 0.000
+Bridge 23 : (23, 24) has length 9.5999 with pumping 0.000
+Bridge 24 : (24, 25) has length 12.285 with pumping 0.000
+Bridge 25 : (25, 26) has length 12.437 with pumping 0.000
+Bridge 26 : (26, 27) has length 11.294 with pumping 0.000
+Bridge 27 : (27, 28) has length 11.844 with pumping 0.000
+Bridge 28 : (28, 29) has length 9.3673 with pumping 0.000
+Bridge 29 : (29, 30) has length 12.71 with pumping 0.000
+Bridge 30 : (30, 31) has length 6.8607 with pumping 0.000
+Bridge 31 : (31, 32) has length 13.605 with pumping 0.000
+Bridge 32 : (32, 33) has length 7.9375 with pumping 0.000
+Bridge 33 : (33, 34) has length 9.9299 with pumping 0.000
+Bridge 34 : (34, 35) has length 7.654 with pumping 0.000
+Bridge 35 : (35, 36) has length 10.392 with pumping 0.000
+Bridge 36 : (36, 37) has length 7.0296 with pumping 0.000
+Bridge 37 : (37, 38) has length 10.933 with pumping 0.000
+Bridge 38 : (38, 39) has length 11.234 with pumping 0.000
+Bridge 39 : (39, 40) has length 12.193 with pumping 0.000
+Bridge 40 : (40, 41) has length 10.67 with pumping 0.000
+Bridge 41 : (41, 42) has length 8.8157 with pumping 0.000
+Bridge 42 : (42, 43) has length 8.693 with pumping 0.000
+Bridge 43 : (43, 44) has length 9.3763 with pumping 0.000
+Bridge 44 : (44, 45) has length 12.903 with pumping 0.000
+Bridge 45 : (45, 46) has length 12.798 with pumping 0.000
+Bridge 46 : (46, 47) has length 11.651 with pumping 0.000
+Bridge 47 : (47, 48) has length 6.5969 with pumping 0.000
+Bridge 48 : (48, 49) has length 8.002 with pumping 0.000
+Bridge 49 : (49, 50) has length 10.048 with pumping 0.000
+Bridge 50 : (50, 51) has length 7.5166 with pumping 0.000
+Bridge 51 : (51, 52) has length 7.5702 with pumping 0.000
+Bridge 52 : (52, 53) has length 9.1331 with pumping 0.000
+Bridge 53 : (53, 54) has length 11.568 with pumping 0.000
+Bridge 54 : (54, 55) has length 10.826 with pumping 0.000
+Bridge 55 : (55, 56) has length 10.321 with pumping 0.000
+Bridge 56 : (56, 57) has length 11.09 with pumping 0.000
+Bridge 57 : (57, 58) has length 7.0654 with pumping 0.000
+Bridge 58 : (58, 59) has length 9.8893 with pumping 0.000
+Bridge 59 : (59, 60) has length 5.2601 with pumping 0.000
+Bridge 60 : (60, 61) has length 8.3328 with pumping 0.000
+Bridge 61 : (61, 62) has length 8.5256 with pumping 0.000
+Bridge 62 : (62, 63) has length 11.29 with pumping 0.000
+Bridge 63 : (63, 64) has length 12.523 with pumping 0.000
+Bridge 64 : (64, 65) has length 11.656 with pumping 0.000
+Bridge 65 : (65, 66) has length 14.406 with pumping 0.000
+Bridge 66 : (66, 67) has length 7.7404 with pumping 0.000
+Bridge 67 : (67, 68) has length 10.456 with pumping 0.000
+Bridge 68 : (68, 69) has length 10.503 with pumping 0.000
+Bridge 69 : (69, 70) has length 13.953 with pumping 0.000
+Bridge 70 : (70, 71) has length 12.613 with pumping 0.000
+Bridge 71 : (71, 72) has length 11.593 with pumping 0.000
+Bridge 72 : (72, 73) has length 12.21 with pumping 0.000
+Bridge 73 : (73, 74) has length 9.698 with pumping 0.000
+Bridge 74 : (74, 75) has length 6.8388 with pumping 0.000
+Bridge 75 : (75, 76) has length 10.601 with pumping 0.000
+Bridge 76 : (76, 77) has length 8.5127 with pumping 0.000
+Bridge 77 : (77, 78) has length 9.4384 with pumping 0.000
+Bridge 78 : (78, 79) has length 8.0571 with pumping 0.000
+Bridge 79 : (79, 80) has length 8.0198 with pumping 0.000
+Bridge 80 : (80, 81) has length 11.656 with pumping 0.000
+Bridge 81 : (81, 82) has length 7.5575 with pumping 0.000
+Bridge 82 : (82, 83) has length 11.169 with pumping 0.000
+Bridge 83 : (83, 84) has length 10.873 with pumping 0.000
+Bridge 84 : (84, 85) has length 8.3453 with pumping 0.000
+Bridge 85 : (85, 86) has length 7.9743 with pumping 0.000
+Bridge 86 : (86, 87) has length 10.406 with pumping 0.000
+Bridge 87 : (87, 88) has length 10.08 with pumping 0.000
+Bridge 88 : (88, 89) has length 9.0487 with pumping 0.000
+Bridge 89 : (89, 90) has length 8.2153 with pumping 0.000
+Bridge 90 : (90, 91) has length 8.8818 with pumping 0.000
+Bridge 91 : (91, 92) has length 13.001 with pumping 0.000
+Bridge 92 : (92, 93) has length 9.7401 with pumping 0.000
+Bridge 93 : (93, 94) has length 11.096 with pumping 0.000
+Bridge 94 : (94, 95) has length 8.9417 with pumping 0.000
+Bridge 95 : (95, 96) has length 8.8943 with pumping 0.000
+Bridge 96 : (96, 97) has length 8.5224 with pumping 0.000
+Bridge 97 : (97, 98) has length 10.663 with pumping 0.000
+Bridge 98 : (98, 99) has length 6.8152 with pumping 0.000
+Bridge 99 : (99, 100) has length 10.23 with pumping 0.000
+Bridge 100 : (100, -1) has length 10.0 with pumping 0.000

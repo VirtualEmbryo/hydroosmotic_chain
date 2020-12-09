@@ -1,0 +1,10 @@
+username : mathieuleverge
+hostname : TURLIER2-CIRB.local
+wdir : /Users/mathieuleverge/git/chain_lumen/_data/trajectory/taus1_chiv10_chis1
+
+config   : /Users/mathieuleverge/git/chain_lumen/_data/trajectory/taus1_chiv10_chis1/config.conf
+args     : ['-v']
+
+start    : Tue Sep 22 14:33:54 2020
+status   : 2
+stop     : Tue Sep 22 14:33:59 2020

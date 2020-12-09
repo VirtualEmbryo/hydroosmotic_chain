@@ -1,0 +1,3 @@
+Time 1094.686002445593 : lumen 1 disappears
+Time 1384.7301368518486 : lumen 2 disappears
+Time 1384.756698 : empty chain.

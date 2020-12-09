@@ -1,0 +1,10 @@
+Time 0.1788730175918793 : lumen 5 disappears
+Time 0.20516058311173532 : lumen 7 disappears
+Time 0.25165531032118604 : lumen 10 disappears
+Time 0.6464224616435761 : lumen 3 disappears
+Time 0.6585197296916873 : lumen 8 disappears
+Time 0.8798341672193166 : lumen 1 disappears
+Time 3.7298551139817255 : lumen 6 disappears
+Time 10.73803716666226 : lumen 2 disappears
+Time 53.31642454672362 : lumen 9 disappears
+Time 53.316716 : end. One lumen left.

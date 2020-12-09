@@ -16,6 +16,11 @@ To use, first generate the class, then read the configuration file :
  'category2' : {'item3' : value1, ...}, 
  ...}
 
+    Requirements
+    ------------
+    sys
+    os
+
 
 About :
 configreader is class inspired by the library configparser, available for Python 3, 

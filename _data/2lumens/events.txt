@@ -1,0 +1,6 @@
+Time 0.6313523602490326 : lumen 1 disappears
+Time 0.665253 : end. One lumen left.Time 0.6313523602490326 : lumen 1 disappears
+Time 0.665253 : end. One lumen left.Time 0.772940 : end. One lumen left.Time 0.875357 : end. One lumen left.Time 0.6313523602490326 : lumen 1 disappears
+Time 0.665253 : end. One lumen left.Time 0.6313523602490326 : lumen 1 disappears
+Time 0.665253 : end. One lumen left.Time 0.6313523602490326 : lumen 1 disappears
+Time 0.665253 : end. One lumen left.

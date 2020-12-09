@@ -1,0 +1,10 @@
+username : mathieuleverge
+hostname : TURLIER2-CIRB.local
+wdir : /Users/mathieuleverge/git/hydroosmotic_chain/_data/10lumens/
+
+config   : /Users/mathieuleverge/git/hydroosmotic_chain/_data/10lumens/config.conf
+args     : ['-v']
+
+start    : Wed Dec  9 15:57:28 2020
+status   : 1
+stop     : Wed Dec  9 15:57:37 2020

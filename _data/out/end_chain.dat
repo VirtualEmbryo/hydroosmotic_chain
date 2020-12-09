@@ -1,0 +1,18 @@
+======= CHAIN =======
+Type         : hydroosmotic
+Total length : 259.46127946344825
+Current Time : 260.9477704619868
+Screening lengths : 
+        xi_s = 5.104011653414369
+        xi_v = 510.40116534143687
+Permeation times :
+       tau_s = 1.0
+       tau_v = 1.0
+======= LUMENS =======
+Nb lumens : 1
+Lumen 0 is at position 0.000 with length 0.000 and 0.000 ions with pumping 0.000
+Lumen 25 is at position 67.973 with length 5.811 and 52.436 ions with pumping 0.000
+Lumen -1 is at position 259.461 with length 0.000 and 0.000 ions with pumping 0.000
+======= BRIDGES ======
+Bridge 197 : (0, 25) has length 62.162 with pumping 0.000
+Bridge 199 : (-1, 25) has length 185.68 with pumping 0.000

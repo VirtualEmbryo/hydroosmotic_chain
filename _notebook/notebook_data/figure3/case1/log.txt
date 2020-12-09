@@ -1,0 +1,10 @@
+username : mathieuleverge
+hostname : TURLIER2-CIRB.local
+wdir : /Users/mathieuleverge/git/hydroosmotic_chain/_notebook/notebook_data/figure3/case1
+
+config   : /Users/mathieuleverge/git/hydroosmotic_chain/_notebook/notebook_data/figure3/case1/config.conf
+args     : ['-v']
+
+start    : Thu Dec  3 15:09:42 2020
+status   : 2
+stop     : Thu Dec  3 15:09:58 2020

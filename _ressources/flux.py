@@ -45,6 +45,8 @@ used to integrate the ODE describing hydraulic or hydroosmotic lumens.
     
     
     NB : this file also inclues a shut-down of warning for RunTimeWarning.
+
+Mathieu Le Verge--Serandour, 2020
 """
 
 

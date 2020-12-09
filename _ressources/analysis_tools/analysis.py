@@ -1,16 +1,28 @@
-#!/usr/bin/env python
-# analysis.py
-
 """
-python3 
+analysis.py is a library of functions used in analysis
 
-    Options
-    -------
-    main_dir
-    tpl
-    filename
-    outfile
+    Contains
+    --------
+        AVERAGE
+    gen_log_times           : Calculate a time-list in logspace, given tmin and tmax
+    find_argmins            : Find the argument (index) of the times with minimal distances from log_times.
+    gen_index_array         : Gives the indices of times corresponding to the minimal distance between choosen time-points in logscale.
+        BATCH
+    batch_window            : Make batches of data in a given window.
+    batch_average           : Make average of a batch.
+    batch                   : Calculate an average of values contained in data_dict based on "windows".
+        IMPORT
+    make_path_dict          : Gives the list of path of the simulation folders.
+    import_osmotic          : Import sim_nlum.dat files and returns a dictionnary from it.
+        PLOT
+    plot_conf               : Plot the  number of lumens vs time given the choosen configuration
+    plot_osmotic_pumping    : Plot the number of lumens vs time for HO-chain with active pumping.
+    plot_osmotic            : Plot the number of lumens vs time for HO-chain without active pumping.
 
+    Requirements
+    ------------
+
+Mathieu Le Verge--Serandour, 2020
 """
 
 import numpy as np
@@ -19,112 +31,116 @@ except : pass
 
 import os, sys
 
-def get_listdir(main_dir, tpl) :
-    L = os.listdir(main_dir)
-    
-    listdir = []
-    for elem in L :
-        if elem.startswith(tpl) :
-            listdir += [elem]
-    return listdir
 
-def get_initialconditions(filename, mu=0.6105653703843762, eps = 1e-3) :
-    f = open(filename, 'r')
-    s = f.readlines()
-    f.close()
-    if len(s) == 22 :
-        xis = float(s[5].split(' ')[-1])
-        xiv = float(s[6].split(' ')[-1])
-    
-        L1 = float(s[13].split(' ')[8])
-        N1 = float(s[13].split(' ')[10])
-        L2 = float(s[14].split(' ')[8])
-        N2 = float(s[14].split(' ')[10])
-    
-        ell_12 = float(s[18].split(' ')[7])
-        W = int(s[21].split(' ')[-1])
-    
-        L0 = L1+L2+ell_12
-        P1 = L0*eps/L1
-        P2 = L0*eps/L2
-    
-        C1 = N1 * mu / L1**2
-        C2 = N2 * mu / L2**2
-    
-        return xis, xiv, P1, C1, P2, C2, W
-    else : 
-        xis = float(s[5].split(' ')[-1])
-        xiv = float(s[6].split(' ')[-1])
-    
-        L1 = float(s[13].split(' ')[8])
-        N1 = float(s[13].split(' ')[10])
-        L2 = float(s[14].split(' ')[8])
-        N2 = float(s[14].split(' ')[10])
-    
-        ell_12 = float(s[18].split(' ')[7])
-        W = 0
-    
-        L0 = L1+L2+ell_12
-        P1 = L0*eps/L1
-        P2 = L0*eps/L2
-    
-        C1 = N1 * mu / L1**2
-        C2 = N2 * mu / L2**2
-    
-        return xis, xiv, P1, C1, P2, C2, W
-
-def get_outputs(filename, list_dir, main_dir = '_data/') :
-    L = []
-    for elem in list_dir :
-        L += [get_initialconditions(os.path.join(main_dir, elem, filename))]
-    return np.array(L)
-
-def make_file_outputs(outputs, filename, header='') :
-    np.savetxt(filename, outputs, delimiter='\t', header=header)
-        
-def main(args) :
-    for arg in args :
-        if arg.startswith('main_dir=') :
-            main_dir = arg[len('main_dir='):]
-        elif arg.startswith('tpl=') :
-            tpl = arg[len('tpl='):]
-        elif arg.startswith('filename=') :
-            filename = arg[len('filename='):]
-        elif arg.startswith('outfile=') :
-            outfile = arg[len('outfile='):]
-    
-    print(main_dir, tpl, filename, outfile)
-    
-    list_dir = get_listdir(main_dir, tpl)
-    outputs = get_outputs(filename, list_dir, main_dir)
-    
-    make_file_outputs(outputs, os.path.join(main_dir, outfile))
-    
-    return ;
-
-def distrib(line, nbins=10, Lmax=None) :
-    """Calculate the distribution of a configuration given a time step in the shape of a line
-    
-    line = [time, L1, L2, L3, ...]
-    
-    
+ca_dict = {0.01 : ['ca1e-2', 'b'], 0.1 : ['ca1e-1', 'r'], 1 : ['ca1e0', 'purple'],10 : ['ca1e1', 'orange']}
+lw = 1. # Linewidth
+ms = 4  # Marker size
+chi_dict = {(5, 5) : ['^', ms, 1., lw],
+            (5, 1) : ['^', ms, 1., lw],
+            (50, 5) : ['s', ms, 1., lw],
+            (50, 50) : ['+', ms, 1., lw],
+            (50, 1) : ['+', ms, 1., lw],
+            (500, 500) : ['s', ms, 1., lw],
+            (500, 1) : ['s', ms, 1., lw],
+            (500, 5) : ['o', ms, 1., lw],
+           }
+           
+# AVERAGE
+def gen_log_times(tmin, tmax, npts) :
     """
-    time = float(line.split('\t')[0])
-    s = line.split('\t')[1:]
-    values = []
-    for elem in s :
-        if elem != '' and elem != '\n' :
-            if float(elem) > 0.1 :
-                if Lmax != None :
-                    if float(elem) <= Lmax :
-                        values += [float(elem)]
-                else :
-                    values += [float(elem)]
-    x, y = np.histogram(values, bins=nbins)
-    y = 0.5*(y[1:]+y[:-1])
-    return time, [x, y]
+    gen_log_times(tmin, tmax, npts)
+    
+        Calculate a time-list in logspace, given tmin and tmax
+    
+        Parameters
+        ----------
+        tmin : float
+            Minimal time
+        tmax : float
+            Maximal time
+    
+        Returns
+        -------
+        T : list
+            List of times generated in logscale.
+    """
+    T = np.logspace(np.log10(tmin), np.log10(tmax), npts)
+    return T
 
+def find_argmins(Nt, log_times) :
+    """
+    find_argmins(Nt, log_times)
+        
+        Find the argument (index) of the times with minimal distances from log_times.
+        
+        Parameters
+        ----------
+        Nt : list
+            Array that represents the number of lumens versus time, such that Nt[:, 0] are the time-steps, Nt[:, 1] the number of lumens
+        log_times : list
+            List of times (in log-scale)
+        Returns
+        -------
+        index_array : list
+            list of indices
+    """
+    index_array = np.zeros(len(log_times), dtype=int)
+    for k in range(len(log_times)) :
+        index_array[k] = np.argmin(np.abs(log_times[k]-Nt[:, 0]))
+    return index_array
+
+def gen_index_array(Nt, npts) :
+    """
+    gen_index_array(Nt, npts)
+    
+        Gives the indices of times corresponding to the minimal distance between choosen time-points in logscale.
+    
+        Parameters
+        ----------
+        Nt : array
+            Array that represents the number of lumens versus time, such that Nt[:, 0] are the time-steps, Nt[:, 1] the number of lumens
+        npts : int
+            Number of points
+    
+        Returns
+        -------
+        index_array : array
+            List of indices of time-points for the simulation.
+    """
+    size = len(Nt)
+    
+    tmin = np.min(Nt[1:, 0])   # skip the first time since t=0
+    tmax = np.max(Nt[1:, 0])   # skip the first time since t=0
+    
+    log_times = gen_log_times(tmin, tmax, npts)
+    index_array = find_argmins(Nt, log_times)
+    
+    return index_array
+
+# BATCH
 def batch_window(data, wmin, wmax, nwindow) :
+    """
+    batch_window(data, wmin, wmax, nwindow)
+    
+        Create a list of intervals/windows in log-scale.
+        Make batches of data in a given window.
+    
+        Parameters
+        ----------
+        data :  array
+            List of data. Must be an array of at least 2 dimension.
+        wmin : float
+            Minimal time for the intervals
+        wmax : float
+            Maximal time for the intervals
+        nwindow : int
+            Number of windows
+    
+        Returns
+        -------
+        batch : list
+            List of batched data
+    """
     window = np.logspace(wmin, wmax, nwindow)
     time = np.cumsum(window)
     batch = []
@@ -134,6 +150,26 @@ def batch_window(data, wmin, wmax, nwindow) :
     return batch    
 
 def batch_average(batchlist) :
+    """
+    batch_average(batchlist)
+        
+        Make average of a batch.
+        
+        Parameters
+        ----------
+        batchlist : list
+            List of data to batc, such as simulations
+            Example :
+            batchlist = [ [[0, 0], [1, 2], [2, 4], ...],
+                          [[0, 3], [1, 2], [2, 8], ...]
+                        ]
+        Returns
+        -------
+        B_avg : array
+            Array of averaged data
+        B_std : array
+            Array of the standard-deviations of the data
+    """
     B_avg = []
     B_std = []
 
@@ -159,6 +195,31 @@ def batch_average(batchlist) :
     return B_avg, B_std
 
 def batch(data_dict, wmin, wmax, nwindow) :
+    """
+    batch(data_dict, wmin, wmax, nwindow)
+        
+        Calculate an average of values contained in data_dict based on "windows".
+        The number of windows and the min and max windows give points arround whch the windows are taken
+        and all the values contained in these windows are averaged to form a single point, with standard deviation.
+        
+        Parameters
+        ----------
+        data_dict : dict
+            Dictionnary of data to average.
+        wmin : float
+            Minimal value (in log-scale) of the averaging area
+        wmax : float
+            Maximal value (in log-scale) of the averaging area
+        nwindow : int
+            Number of windows
+    
+        Returns
+        -------
+        B_avg : list
+            List of averaged values
+        B_std :
+            List of standard deviations associated to the averaged values
+    """
     window = np.logspace(wmin, wmax, nwindow)
     time = np.cumsum(window)
     dat_batch_list = []
@@ -169,48 +230,52 @@ def batch(data_dict, wmin, wmax, nwindow) :
     B_avg, B_std = batch_average(dat_batch_list)
     return B_avg, B_std
 
-# =================
-def lin(x, a, b) :
-    return a*x+b
-
-def fit_coeff(func, x_dat, y_dat) :
-    x_dat_log, y_dat_log = x_dat, y_dat
-    popt, pcov = curve_fit(func, x_dat_log, y_dat_log)
-    return popt#, pcov
-
-def average_powerlaw(a_list, k_list) :
-    a_avg = np.average(a_list)
-    k_avg = np.exp(np.average(k_list))
-    return a_avg, k_avg
-
-def calc_mu(theta) :
-    return np.sin(theta)**2 / (2*theta - np.sin(2*theta))
-
-def calc_chi(theta, gamma, kappa, ell0, L0) :
-    mu = calc_mu(theta)
-    return 0.5*mu*np.sin(theta)*gamma*kappa / (ell0*L0**3)
-    #return gamma*kappa / (ell0*L0**3)
-
-def calc_chi(theta, eps, kappa, ell0, L0) :
-    mu = calc_mu(theta)
-    return 0.5*mu*np.sin(theta)*eps*kappa / (ell0*L0**3)
-    #return mu*np.sin(theta)*eps / (L0*ell0**3)
-
-def fit_lin(t, N) :
-    x, y = np.log(t), np.log(N)
-    popt, pcov = curve_fit(lin, x, y)
-    alpha, kappa = popt[0], np.exp(popt[1])
-    alpha_std, kappa_std = pcov[0, 0], np.exp(pcov[1, 1])
-    return kappa, alpha#, kappa_std, alpha_std
-
-def make_path_dict(nsim, chiv, chis, main_dir, subdir, subsubdir) :
+# IMPORT
+def make_path_dict(nsim, main_dir, subdir, subsubdir='') :
+    """
+    make_path_dict(nsim, main_dir, subdir, subsubdir=')
+        Gives the list of path of the simulation folders.
+    
+        Parameters
+        ----------
+        nsim : int
+            Number of simulation
+        main_dir : path
+        subdir : path
+        subsubdir : path, optional, default : ''
+            
+        Returns
+        -------
+        pathdict :
+            List of paths of each simulation.
+    
+    """
     pathdict = {}
     for n in range(nsim) :
-        #subsubdir = 'chiv' + str(chiv) + '_chis' + str(chis) + s
         pathdict[n] = os.path.join(main_dir, subdir, subsubdir, 'run'+str(n).zfill(4))
     return pathdict
 
 def import_osmotic(chiv, chis, path_list, ca = None) :
+    """
+    import_osmotic(chiv, chis, path_list, ca = None)
+    
+        Import sim_nlum.dat files and returns a dictionnary from it.
+    
+        Parameters
+        ----------
+        chiv : float
+            Value of chis for the folders
+        chis : float
+            Value of chis for the folders
+        pathlist : list
+            List of path of the simulation folders, indexed by pathlist[(chiv, chis)][n]
+        ca : string, optional, default : None
+            If specified, value of active pumping.
+        Returns
+        -------
+        Nt : dict
+            Dictionnary containing all N(t) vs t arrays for the simulations
+    """
     Nt = {}
     if ca == None :
         for n in path_list[(chiv, chis)].keys() :
@@ -220,68 +285,17 @@ def import_osmotic(chiv, chis, path_list, ca = None) :
             Nt[n] = np.loadtxt(os.path.join(path_list[(chiv, chis)][ca][n], 'sim_nlum.dat'))
     return Nt
 
-def plot_osmotic(chiv, chis, path_list, plot_param_list, Nt_list, rescale = False) :
-    label = False
-    Nt_list[(chis, chiv)] = {}
-    for n in range(nsim) :
-        Nt_list[(chis, chiv)][n] = np.loadtxt(os.path.join(path_list[(chis, chiv)][n], 'sim_nlum.dat'))
-        if label :
-            if not rescale :
-                plt.plot(Nt_list[(chis, chiv)][n][:, 0], Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], alpha=plot_param_list[(chis, chiv)][4])
-            else :
-                plt.plot(Nt_list[(chis, chiv)][n][:, 0]*chiv**2, Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], alpha=plot_param_list[(chis, chiv)][4])
-        else :
-            label = True
-            if not rescale :
-                plt.plot(Nt_list[(chis, chiv)][n][:, 0], Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], label = r'$\chi_s$ = '+ str(chis) + r' ; $\chi_v = $' + str(chiv), alpha=1.)
-            else :
-                plt.plot(Nt_list[(chis, chiv)][n][:, 0]*chiv**2, Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], label = r'$\chi_s$ = '+ str(chis) + r' ; $\chi_v = $' + str(chiv), alpha=plot_param_list[(chis, chiv)][4])
-    return Nt_list[(chis, chiv)]
-
-def plot_osmotic_pumping(chiv, chis, path_list, plot_param_list, Nt_list, rescale = False) :
-    label = False
-    Nt_list[(chis, chiv)] = {}
-    for n in range(nsim) :
-        Nt_list[(chis, chiv)][n] = np.loadtxt(os.path.join(path_list[(chis, chiv)][n], 'sim_nlum.dat'))
-        if label :
-            if not rescale :
-                plt.plot(Nt_list[(chis, chiv)][n][:, 0], Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], alpha=plot_param_list[(chis, chiv)][4])
-            else :
-                plt.plot(Nt_list[(chis, chiv)][n][:, 0]*chiv**2, Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], alpha=plot_param_list[(chis, chiv)][4])
-        else :
-            label = True
-            if not rescale :
-                plt.plot(Nt_list[(chis, chiv)][n][:, 0], Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], label = r'$\chi_s$ = '+ str(chis) + r' ; $\chi_v = $' + str(chiv), alpha=1.)
-            else :
-                plt.plot(Nt_list[(chis, chiv)][n][:, 0]*chiv**2, Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], label = r'$\chi_s$ = '+ str(chis) + r' ; $\chi_v = $' + str(chiv), alpha=plot_param_list[(chis, chiv)][4])
-    return Nt_list[(chis, chiv)]
-
-# Averaging
-
-def gen_log_times(tmin, tmax, npts) :
-    return np.logspace(np.log10(tmin), np.log10(tmax), npts)
-
-def find_argmins(Nt, log_times) :
-    index_array = np.zeros(len(log_times), dtype=int)
-    for k in range(len(log_times)) :
-        index_array[k] = np.argmin(np.abs(log_times[k]-Nt[:, 0]))
-    return index_array
-
-def gen_index_array(Nt, npts) :
-    size = len(Nt)
-    
-    tmin = np.min(Nt[1:, 0])   # skip the first time since t=0
-    tmax = np.max(Nt[1:, 0])   # skip the first time since t=0
-    
-    log_times = gen_log_times(tmin, tmax, npts)
-    index_array = find_argmins(Nt, log_times)
-    
-    return index_array
-
-# Show configuration
+# PLOT
 def plot_conf(ca, chis, chiv, Nt, npts=20,  wmin=-6, wmax=3, rescaled=False, rescaled_pumping=False, ell0=10, L0=12000, tau=1, show_sim=False, ax=None) :
+    """
+    plot_conf(ca, chis, chiv, Nt, npts=20,  wmin=-6, wmax=3, rescaled=False, rescaled_pumping=False, ell0=10, L0=12000, tau=1, show_sim=False, ax=None)
+        
+        Plot the  number of lumens vs time given the choosen configuration
+        
+        chi_dict, ca_dict are colors, linestyle, etc.
+    """
     global chi_dict, ca_dict
-    global mu, nu, eps
+    mu, nu, eps = 0.6105653703843762, 1.2091995761561452, 1e-3
     chi = (chis, chiv)
     xiv = ell0*chiv
     T = (2*tau*L0**2)/((xiv**2)*mu*eps)
@@ -326,8 +340,12 @@ def plot_conf(ca, chis, chiv, Nt, npts=20,  wmin=-6, wmax=3, rescaled=False, res
         else :
             plt.plot(res_avg[:, 0], res_avg[:, 1], color = ca_dict[ca][1], marker=chi_dict[chi][0], markersize=chi_dict[chi][1], label = r'$c^a = ' + str(ca) + '$')
     
-    
 def plot_osmotic_pumping(Nt, ca_bools, chi_bools, npts=50, rescaled = False, rescaled_pumping = False, show_sim=False, scaling_laws=True, savefig=False, savename='H0-coarsening_pumping.png', extension='png') :
+    """
+    plot_osmotic_pumping(chiv, chis, path_list, plot_param_list, Nt_list, rescale = False)
+    
+        Plot the number of lumens vs time for HO-chain with active pumping.
+    """
     plt.figure(figsize=(6, 6))
     plt.xscale('log')
     plt.yscale('log')
@@ -432,15 +450,50 @@ def plot_osmotic_pumping(Nt, ca_bools, chi_bools, npts=50, rescaled = False, res
         plt.savefig(savename, format=extension)
     plt.show()
 
-if __name__ == '__main__' :
-    if len(sys.argv) < 2:
-        print('[network_simulation.py] Error: missing args.')
-    elif sys.argv[1]=='help' or sys.argv[1]=='-h':
-        print(__doc__)
-    # first argument should be a readable config file:
-    else :
-        args = sys.argv[1:]
-        main(args)
-    sys.exit()
+def plot_osmotic(chiv, chis, path_list, plot_param_list, Nt_list, rescale = False) :
+    """
+    plot_osmotic(chiv, chis, path_list, plot_param_list, Nt_list, rescale = False)
     
+        Plot the number of lumens vs time for HO-chain without active pumping.
+    """
+    label = False
+    Nt_list[(chis, chiv)] = {}
+    for n in range(nsim) :
+        Nt_list[(chis, chiv)][n] = np.loadtxt(os.path.join(path_list[(chis, chiv)][n], 'sim_nlum.dat'))
+        if label :
+            if not rescale :
+                plt.plot(Nt_list[(chis, chiv)][n][:, 0], Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], alpha=plot_param_list[(chis, chiv)][4])
+            else :
+                plt.plot(Nt_list[(chis, chiv)][n][:, 0]*chiv**2, Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], alpha=plot_param_list[(chis, chiv)][4])
+        else :
+            label = True
+            if not rescale :
+                plt.plot(Nt_list[(chis, chiv)][n][:, 0], Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], label = r'$\chi_s$ = '+ str(chis) + r' ; $\chi_v = $' + str(chiv), alpha=1.)
+            else :
+                plt.plot(Nt_list[(chis, chiv)][n][:, 0]*chiv**2, Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], label = r'$\chi_s$ = '+ str(chis) + r' ; $\chi_v = $' + str(chiv), alpha=plot_param_list[(chis, chiv)][4])
+    return Nt_list[(chis, chiv)]
+
+def plot_osmotic_pumping(chiv, chis, path_list, plot_param_list, Nt_list, rescale = False) :
+    """
+    plot_osmotic_pumping(chiv, chis, path_list, plot_param_list, Nt_list, rescale = False)
     
+        Plot the number of lumens vs time for HO-chain with active pumping.
+    """
+    label = False
+    Nt_list[(chis, chiv)] = {}
+    for n in range(nsim) :
+        Nt_list[(chis, chiv)][n] = np.loadtxt(os.path.join(path_list[(chis, chiv)][n], 'sim_nlum.dat'))
+        if label :
+            if not rescale :
+                plt.plot(Nt_list[(chis, chiv)][n][:, 0], Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], alpha=plot_param_list[(chis, chiv)][4])
+            else :
+                plt.plot(Nt_list[(chis, chiv)][n][:, 0]*chiv**2, Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], alpha=plot_param_list[(chis, chiv)][4])
+        else :
+            label = True
+            if not rescale :
+                plt.plot(Nt_list[(chis, chiv)][n][:, 0], Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], label = r'$\chi_s$ = '+ str(chis) + r' ; $\chi_v = $' + str(chiv), alpha=1.)
+            else :
+                plt.plot(Nt_list[(chis, chiv)][n][:, 0]*chiv**2, Nt_list[(chis, chiv)][n][:, 1], color=plot_param_list[(chis, chiv)][0], marker=plot_param_list[(chis, chiv)][1], markersize=plot_param_list[(chis, chiv)][2], linewidth=plot_param_list[(chis, chiv)][3], label = r'$\chi_s$ = '+ str(chis) + r' ; $\chi_v = $' + str(chiv), alpha=plot_param_list[(chis, chiv)][4])
+    return Nt_list[(chis, chiv)]
+
+##

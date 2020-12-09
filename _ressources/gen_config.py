@@ -43,6 +43,7 @@ python3 gen_config.py config.conf.tpl [options]
         Homemade libraries
     configreader
 
+Mathieu Le Verge--Serandour, 2020
 """
 
 import os, sys
