@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/317295428.svg)](https://zenodo.org/badge/latestdoi/317295428)
+
 # Hydro-osmotic chain
 **Hydro-osmotic** chain is a Python-based code for simulations of coarsening in a 1-dimensional network of hydroosmotic micro-lumens. It was developped to study the contributions of osmotic pressure, permeation and active pumping to the dynamics of micro-lumens, and to investigate the cynamical collective effects of a chain of micro-lumens.
 The micro-lumens are modelled as pressurized cavities with concentration, connected by bridges of variable length. Water and solutes can be exchanged with the external medium via the membrane, through permeation or active pumping.
