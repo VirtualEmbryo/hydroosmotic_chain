@@ -1,12 +1,14 @@
 [![DOI](https://zenodo.org/badge/317295428.svg)](https://zenodo.org/badge/latestdoi/317295428)
+[![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/)
 
 # Hydro-osmotic chain
 **Hydro-osmotic** chain is a Python-based code for simulations of coarsening in a 1-dimensional network of hydroosmotic micro-lumens. It was developped to study the contributions of osmotic pressure, permeation and active pumping to the dynamics of micro-lumens, and to investigate the cynamical collective effects of a chain of micro-lumens.
 The micro-lumens are modelled as pressurized cavities with concentration, connected by bridges of variable length. Water and solutes can be exchanged with the external medium via the membrane, through permeation or active pumping.
 The code solves a system of coupled non-linear equations for the area and concentration dynamics of each micro-lumen, by computing the flux between them. Topological events such as collapse and coalescence are handled during the simulation. The simulation runs until one micro-lumen is left, either by absorbing all neighboring micro-lumens via coalescence or coarsening, or by global collapse of the micro-lumens of the chain.
 
-Please cite the original publication if you use this code :
-Le Verge--Serandour, M and Turlier, H, biorXiv, 2020
+Please cite the original publication if you use this code:
+
+[![DOI:10.1371/journal.pcbi.1009333](http://img.shields.io/badge/DOI-10.1101/2021.01.08.425840-B31B1B.svg)](https://doi.org/10.1371/journal.pcbi.1009333) Le Verge-Serandour, M., & Turlier, H. (2021). A hydro-osmotic coarsening theory of biological cavity formation. PLoS computational biology, 17(9), e1009333.
 
 
 ## Requirements
